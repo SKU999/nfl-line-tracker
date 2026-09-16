@@ -190,23 +190,23 @@ def plot_game(gid, snapshots, output_dir):
     ax.spines["bottom"].set_color("#2d3045")
     ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5]))
 
-    # X-axis time handling
+    # X-axis time handling with explicit Central Time timezone
     if len(timestamps) == 1:
         t = timestamps[0]
         ax.set_xlim(t - timedelta(hours=12), t + timedelta(hours=12))
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%-m/%-d %-I%p"))
-        ax.xaxis.set_major_locator(mdates.HourLocator(interval=6))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%-m/%-d %-I%p CT", tz=CT_TZ))
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=6, tz=CT_TZ))
     elif (timestamps[-1] - timestamps[0]) < timedelta(hours=6):
         mid_t = timestamps[0] + (timestamps[-1] - timestamps[0]) / 2
         ax.set_xlim(mid_t - timedelta(hours=3), mid_t + timedelta(hours=3))
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%-m/%-d %-I%p"))
-        ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%-m/%-d %-I%p CT", tz=CT_TZ))
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=1, tz=CT_TZ))
     elif (timestamps[-1] - timestamps[0]) < timedelta(days=2):
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%a %-I%p"))
-        ax.xaxis.set_major_locator(mdates.HourLocator(interval=6))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%a %-I%p CT", tz=CT_TZ))
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=6, tz=CT_TZ))
     else:
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%a %-m/%-d"))
-        ax.xaxis.set_major_locator(mdates.DayLocator())
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%a %-m/%-d", tz=CT_TZ))
+        ax.xaxis.set_major_locator(mdates.DayLocator(tz=CT_TZ))
 
     fig.autofmt_xdate(rotation=0, ha="center")
     plt.tight_layout()
@@ -352,12 +352,13 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         </tr>""")
 
     chart_lookup = {f.replace(".png", ""): f for f in chart_files}
+    cache_token = int(now_ct.timestamp())
     cards = []
     for r in board_rows:
         key = f"{r['away']}_{r['home']}"
         if key in chart_lookup:
             cls = "card thu-card" if r["is_thu"] else "card"
-            cards.append(f"<div class='{cls}'><img src='{chart_lookup[key]}' alt='{r['away']} @ {r['home']}'></div>")
+            cards.append(f"<div class='{cls}'><img src='{chart_lookup[key]}?v={cache_token}' alt='{r['away']} @ {r['home']}'></div>")
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -365,6 +366,9 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
 <meta charset="UTF-8">
 <title>NFL Lines — DraftKings Tracker</title>
 <meta http-equiv='refresh' content='1800'>
+<meta http-equiv='cache-control' content='no-cache, no-store, must-revalidate'>
+<meta http-equiv='pragma' content='no-cache'>
+<meta http-equiv='expires' content='0'>
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{
