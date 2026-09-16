@@ -32,7 +32,15 @@ LOG_FILE = os.path.join(SCRIPT_DIR, "data", "cron.log")
 PYTHON = sys.executable or "/usr/bin/python3"
 
 MARKER = "# NFL-LINE-TRACKER"
-CMD = f'{PYTHON} {SCRAPER} >> {LOG_FILE} 2>&1 && {PYTHON} {PLOTTER} >> {LOG_FILE} 2>&1'
+CMD = (
+    f'cd {SCRIPT_DIR} && '
+    f'{PYTHON} {SCRAPER} >> {LOG_FILE} 2>&1 && '
+    f'{PYTHON} {PLOTTER} >> {LOG_FILE} 2>&1 && '
+    f'git pull --rebase origin main >> {LOG_FILE} 2>&1 && '
+    f'git add data/ charts/ >> {LOG_FILE} 2>&1 && '
+    f'git commit -m "auto: local cron sync [skip ci]" >> {LOG_FILE} 2>&1 && '
+    f'git push origin main >> {LOG_FILE} 2>&1'
+)
 
 CRON_LINES = [
     # 1. Wed-Sat every 3 hours
