@@ -1,0 +1,92 @@
+name: NFL Line Movement Tracker
+
+on:
+  schedule:
+    # Wed-Sat every 3 hours (CT = UTC-5: 00,03,06,09,12,15,18,21 CT -> 05,08,11,14,17,20,23,02 UTC)
+    - cron: '0 5,8,11,14,17,20,23 * * 3,4,5,6'
+    - cron: '0 2 * * 4,5,6,0'
+    
+    # Sunday Early Window: 6 AM - 10 AM CT (11,12,13,14,15 UTC)
+    - cron: '0 11,12,13,14,15 * * 0'
+    
+    # Sunday Kickoff Steam: 11:00 AM, 11:30 AM, 11:55 AM CT (16:00, 16:30, 16:55 UTC)
+    - cron: '0,30,55 16 * * 0'
+    
+    # Sunday 3:25 PM Late Window Steam: 3:00 PM, 3:20 PM CT (20:00, 20:20 UTC)
+    - cron: '0,20 20 * * 0'
+    
+    # Sunday Night Football Steam: 6:00 PM (23:00 UTC), 7:10 PM CT (00:10 UTC Mon), 10:00 PM CT (03:00 UTC Mon)
+    - cron: '0 23 * * 0'
+    - cron: '10 0 * * 1'
+    - cron: '0 3 * * 1'
+    
+    # Monday Window & MNF Steam: 9am, 12pm, 3pm, 6pm CT (14, 17, 20, 23 UTC) + 7:10pm CT (00:10 Tue UTC)
+    - cron: '0 14,17,20,23 * * 1'
+    - cron: '10 0 * * 2'
+    - cron: '30 3 * * 2'
+
+  # Manual on-demand trigger button in GitHub UI
+  workflow_dispatch:
+
+# Permissions needed to commit snapshots and deploy to GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "nfl-tracker"
+  cancel-in-progress: false
+
+jobs:
+  track_lines:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Scraper & Chart Generator
+        run: |
+          python scrape_nfl_lines.py
+          python plot_nfl_lines.py
+
+      - name: Commit snapshots and updated charts
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ charts/
+          if git diff --staged --quiet; then
+            echo "No line changes detected."
+          else
+            git commit -m "auto: NFL line snapshot & charts update [skip ci]"
+            git pull --rebase origin main || true
+            git push origin main
+          fi
+
+      - name: Setup Pages
+        if: always()
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages Artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'charts'
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        id: deployment
+        uses: actions/deploy-pages@v4
