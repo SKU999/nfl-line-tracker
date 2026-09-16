@@ -91,6 +91,43 @@ def game_day(start_str):
         return ""
 
 
+def classify_slate_window(start_str):
+    """
+    Classify game into an NFL contest window using kickoff time (Central Time):
+    - TNF: Thursday Night Football
+    - SUN_EARLY: Sunday Main Slate — Early (~12:00 PM CT / 1:00 PM ET)
+    - SUN_LATE: Sunday Main Slate — Late (~3:05 - 3:25 PM CT / 4:05 - 4:25 PM ET)
+    - SNF: Sunday Night Football (~7:20 PM CT / 8:20 PM ET)
+    - MNF: Monday Night Football (~7:15 PM CT / 8:15 PM ET)
+    - OTHER_PRIMETIME: International / Saturday / Special Primetime
+
+    Returns: (window_code, window_display_label, window_sort_order)
+    """
+    if not start_str:
+        return ("OTHER_PRIMETIME", "OTHER / SPECIAL PRIMETIME", 99)
+    try:
+        dt_ct = parse_ts_ct(start_str)
+        weekday = dt_ct.strftime("%a")
+        hour = dt_ct.hour
+
+        if weekday == "Thu":
+            return ("TNF", "THURSDAY NIGHT FOOTBALL", 1)
+        if weekday == "Sun":
+            if hour < 11:
+                return ("OTHER_PRIMETIME", "OTHER / SPECIAL PRIMETIME", 2)
+            elif hour < 14:
+                return ("SUN_EARLY", "SUNDAY MAIN SLATE — EARLY", 3)
+            elif hour < 18:
+                return ("SUN_LATE", "SUNDAY MAIN SLATE — LATE", 4)
+            else:
+                return ("SNF", "SUNDAY NIGHT FOOTBALL", 5)
+        if weekday == "Mon":
+            return ("MNF", "MONDAY NIGHT FOOTBALL", 6)
+        return ("OTHER_PRIMETIME", "OTHER / SPECIAL PRIMETIME", 7)
+    except:
+        return ("OTHER_PRIMETIME", "OTHER / SPECIAL PRIMETIME", 99)
+
+
 def format_spread_fav(away, home, sp_home):
     """
     Format spread with the favored team explicitly named:
@@ -246,10 +283,16 @@ def build_board_rows(games_data):
         sp_fav_now = format_spread_fav(away, home, dk_sp1)
         sp_fav_open = format_spread_fav(away, home, dk_sp0)
 
+        # Classify slate window
+        slate_code, slate_label, slate_order = classify_slate_window(last.get("start", ""))
+
         rows.append({
             "away": away, "home": home, "day": day, "gid": gid,
             "n_snaps": len(snaps),
             "start": last.get("start", ""),
+            "slate_window": slate_code,
+            "slate_label": slate_label,
+            "slate_order": slate_order,
             "sp_fav_open": sp_fav_open,
             "sp_fav_now": sp_fav_now,
             "sp_d": sp_d,
@@ -259,15 +302,16 @@ def build_board_rows(games_data):
             "ai": last.get("away_impl"),
             "hi": last.get("home_impl"),
             "max_move": max(abs(sp_d), abs(t_d)),
-            "is_thu": day == "Thu",
+            "is_thu": slate_code == "TNF",
         })
 
     # Sort logic:
-    # 1. Non-Thursday games first, Thursday pinned at bottom
-    # 2. Games with movement (max_move > 0) float to top, sorted by movement desc
-    # 3. If no movement yet, sorted by kickoff time
+    # 1. By slate window order: TNF -> SUN_EARLY -> SUN_LATE -> SNF -> MNF -> OTHER
+    # 2. Within each slate window, preserve existing sorting:
+    #    - Movement first (max_move descending)
+    #    - Then by start time
     rows.sort(key=lambda r: (
-        1 if r["is_thu"] else 0,
+        r["slate_order"],
         -r["max_move"],
         r["start"]
     ))
@@ -317,7 +361,20 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         </div>"""
 
     table_rows = []
+    current_slate = None
+
     for r in board_rows:
+        # Insert separator row if contest window changes
+        if r["slate_window"] != current_slate:
+            current_slate = r["slate_window"]
+            table_rows.append(f"""<tr class='slate-sep-row' data-slate='{r["slate_window"]}'>
+                <td colspan='11' class='slate-sep-cell'>
+                    <span class='sep-dash'>────</span>
+                    <span class='sep-label'>{r["slate_label"]}</span>
+                    <span class='sep-dash'>────</span>
+                </td>
+            </tr>""")
+
         row_cls = "thu" if r["is_thu"] else ""
         tag = "<span class='tag'>THU</span> " if r["is_thu"] else ""
         
@@ -337,7 +394,7 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         reason_text = notes_list[-1]["note"] if notes_list else ""
         reason_cell = f"<td class='reason' title='{reason_text}'>{reason_text}</td>" if reason_text else "<td class='reason-empty'>--</td>"
 
-        table_rows.append(f"""<tr class='{row_cls}'>
+        table_rows.append(f"""<tr class='{row_cls}' data-slate='{r["slate_window"]}'>
             <td class='mu'>{tag}{r['away']} @ <b>{r['home']}</b></td>
             <td>{r['sp_fav_open']}</td>
             <td><b>{r['sp_fav_now']}</b>{sp_flag}</td>
@@ -435,6 +492,30 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
   }}
   .div {{ color: {AMBER_BRIGHT}; font-weight: bold; margin-left: 2px; }}
   tr.thu td {{ opacity: 0.4; }}
+
+  /* Slate Window Separator */
+  .slate-sep-row {{
+    background: #0d0f19;
+  }}
+  .slate-sep-cell {{
+    padding: 12px 14px 8px 14px !important;
+    text-align: center;
+    border-top: 1px solid #23273B;
+    border-bottom: 1px solid #1A1D2D;
+  }}
+  .sep-dash {{
+    color: #383D56;
+    letter-spacing: 2px;
+    font-size: 11px;
+  }}
+  .sep-label {{
+    color: #8D92AA;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    margin: 0 8px;
+    text-transform: uppercase;
+  }}
 
   /* Alert Banners */
   .alert-banner {{
