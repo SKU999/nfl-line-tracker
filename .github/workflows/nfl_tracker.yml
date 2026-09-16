@@ -6,8 +6,9 @@ on:
       - main
   schedule:
     # Wed-Sat every 3 hours (CT = UTC-5: 00,03,06,09,12,15,18,21 CT -> 05,08,11,14,17,20,23,02 UTC)
-    - cron: '0 5,8,11,14,17,20,23 * * 3,4,5,6'
-    - cron: '0 2 * * 4,5,6,0'
+    # Using minute 12 to bypass GitHub Actions top-of-hour scheduling congestion
+    - cron: '12 5,8,11,14,17,20,23 * * 3,4,5,6'
+    - cron: '12 2 * * 4,5,6,0'
     
     # Sunday Early Window: 6 AM - 10 AM CT (11,12,13,14,15 UTC)
     - cron: '0 11,12,13,14,15 * * 0'
