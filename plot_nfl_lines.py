@@ -18,17 +18,22 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
+try:
+    from zoneinfo import ZoneInfo
+    CT_TZ = ZoneInfo("America/Chicago")
+except Exception:
+    CT_TZ = timezone(timedelta(hours=-5), "CT")
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.ticker import MaxNLocator
 
-# Import alert and reason logging
+# Import manual reason logger
 try:
-    from log_reason import check_and_record_alerts, load_reasons
+    from log_reason import load_reasons
 except ImportError:
-    def check_and_record_alerts(s): return []
     def load_reasons(): return {}
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -62,21 +67,25 @@ def load_data():
     return games
 
 
-def parse_ts(ts_str):
+def parse_ts_ct(ts_str):
+    """Parse ISO timestamp and convert explicitly to America/Chicago."""
     ts_str = ts_str.replace("Z", "+00:00")
     try:
-        return datetime.fromisoformat(ts_str)
+        dt = datetime.fromisoformat(ts_str)
     except:
-        return datetime.strptime(ts_str[:19], "%Y-%m-%dT%H:%M:%S")
+        dt = datetime.strptime(ts_str[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(CT_TZ)
+
+parse_ts = parse_ts_ct
 
 
 def game_day(start_str):
     if not start_str:
         return ""
     try:
-        dt_utc = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
-        # Offset -5 hours for US Central Time
-        dt_ct = dt_utc - timedelta(hours=5)
+        dt_ct = parse_ts_ct(start_str)
         return dt_ct.strftime("%a")
     except:
         return ""
@@ -274,8 +283,8 @@ def delta_cell(d):
 
 
 def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
-    now_dt = datetime.now(timezone.utc)
-    now_ct_str = datetime.now().strftime("%a %b %d, %Y %-I:%M %p CT")
+    now_ct = datetime.now(CT_TZ)
+    now_ct_str = now_ct.strftime("%a %b %d, %Y %-I:%M %p %Z")
     total_snaps = sum(r["n_snaps"] for r in board_rows)
     all_reasons = load_reasons()
 
@@ -285,12 +294,10 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
     last_success_str = "Unknown"
     if latest_ts:
         try:
-            last_dt = parse_ts(latest_ts)
-            diff = now_dt - last_dt
+            last_ct = parse_ts_ct(latest_ts)
+            diff = now_ct - last_ct
             stale_hours = max(0.0, diff.total_seconds() / 3600.0)
-            # Convert last success to local Central time
-            last_ct = last_dt - timedelta(hours=5)
-            last_success_str = last_ct.strftime("%a %b %d, %-I:%M %p CT")
+            last_success_str = last_ct.strftime("%a %b %d, %-I:%M %p %Z")
             if stale_hours >= 4.0:
                 is_stale = True
         except:
@@ -523,12 +530,6 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
 def main():
     games = load_data()
     print(f"Loaded {len(games)} games, {sum(len(v) for v in games.values())} snapshots")
-
-    # Check and log any significant moves (>= 1.0 pt)
-    try:
-        check_and_record_alerts(games)
-    except Exception as e:
-        print(f"Alert check note: {e}")
 
     chart_files = []
     for gid, snaps in games.items():
