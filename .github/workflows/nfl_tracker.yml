@@ -1,6 +1,9 @@
 name: NFL Line Movement Tracker
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     # Wed-Sat every 3 hours (CT = UTC-5: 00,03,06,09,12,15,18,21 CT -> 05,08,11,14,17,20,23,02 UTC)
     - cron: '0 5,8,11,14,17,20,23 * * 3,4,5,6'
