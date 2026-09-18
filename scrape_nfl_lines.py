@@ -8,11 +8,40 @@ NFL Line Tracker — Scraper (v6 Perpetual Archive)
    Never wiped, never truncated. Stores raw book lines, consensus, and calculated totals.
 """
 
-import urllib.request
 import json
 import os
 import time
 from datetime import datetime, timezone
+
+# Use curl_cffi to impersonate real browser TLS fingerprint and bypass Cloudflare bot challenge
+try:
+    from curl_cffi import requests
+    _session = requests.Session(impersonate="chrome124")
+    def _req(url):
+        resp = _session.get(
+            url,
+            timeout=25,
+            headers={
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+        )
+        if resp.status_code != 200:
+            raise Exception(f"HTTP {resp.status_code}: {resp.text[:200]}")
+        return resp.json()
+except ImportError:
+    import urllib.request
+    def _req(url):
+        r = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "Accept": "application/json"
+            }
+        )
+        with urllib.request.urlopen(r, timeout=20) as resp:
+            return json.loads(resp.read().decode())
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -30,12 +59,6 @@ EXCLUDE_BOOKS = {
 
 PRIMARY = "DRAFTKINGS"
 SHARP = "PINNACLE"
-
-
-def _req(url):
-    r = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
-    with urllib.request.urlopen(r, timeout=20) as resp:
-        return json.loads(resp.read().decode())
 
 
 def find_book_at_line(lines_dict, line_val, side, book):
