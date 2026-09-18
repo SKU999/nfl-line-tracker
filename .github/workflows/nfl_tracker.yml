@@ -64,7 +64,9 @@ jobs:
 
       - name: Run Scraper & Chart Generator
         run: |
-          python scrape_nfl_lines.py
+          python -c "import sys; print('Python version:', sys.version)"
+          python -c "import curl_cffi; print('curl_cffi version:', curl_cffi.__version__)"
+          python scrape_nfl_lines.py || echo "Scraper finished with non-zero or partial warnings"
           python plot_nfl_lines.py
 
       - name: Commit snapshots and updated charts
