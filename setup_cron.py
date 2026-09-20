@@ -36,9 +36,9 @@ CMD = (
     f'cd {SCRIPT_DIR} && '
     f'{PYTHON} {SCRAPER} >> {LOG_FILE} 2>&1 && '
     f'{PYTHON} {PLOTTER} >> {LOG_FILE} 2>&1 && '
-    f'git pull --rebase origin main >> {LOG_FILE} 2>&1 && '
     f'git add data/ charts/ >> {LOG_FILE} 2>&1 && '
-    f'git commit -m "auto: local cron sync [skip ci]" >> {LOG_FILE} 2>&1 && '
+    f'(git diff --cached --quiet || git commit -m "auto: local cron sync [skip ci]") >> {LOG_FILE} 2>&1 && '
+    f'git pull --rebase -X ours origin main >> {LOG_FILE} 2>&1 && '
     f'git push origin main >> {LOG_FILE} 2>&1'
 )
 

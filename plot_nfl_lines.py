@@ -50,20 +50,59 @@ TEXT_LABEL = "#B0B3C6"
 GRID_MUTED = "#222536"
 
 
-def load_data():
+def get_current_slate_window(ref_time=None):
+    """
+    Returns (start_dt, end_dt) for the active NFL week in Central Time.
+    An NFL week starts Tuesday 00:00 CT and concludes Tuesday 06:00 CT.
+    """
+    if ref_time is None:
+        ref_time = datetime.now(CT_TZ)
+    days_since_tue = (ref_time.weekday() - 1) % 7
+    week_start = (ref_time - timedelta(days=days_since_tue)).replace(hour=0, minute=0, second=0, microsecond=0)
+    week_end = week_start + timedelta(days=7, hours=6)
+    return week_start, week_end
+
+
+def load_data(active_only=True):
     games = defaultdict(list)
     if not os.path.exists(DATA_FILE):
         print(f"No data at {DATA_FILE}")
         sys.exit(1)
+
+    week_start, week_end = get_current_slate_window()
+
     with open(DATA_FILE) as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
             s = json.loads(line)
-            games[s.get("game_id", "?")].append(s)
-    for gid in games:
-        games[gid].sort(key=lambda s: s.get("ts", ""))
+            away = s.get("away")
+            home = s.get("home")
+            if not away or not home:
+                continue
+            mu_key = f"{away}@{home}"
+            games[mu_key].append(s)
+
+    for mu in list(games.keys()):
+        games[mu].sort(key=lambda s: s.get("ts", ""))
+
+    if active_only:
+        filtered = {}
+        for mu, snaps in games.items():
+            start_str = next((s.get("start") for s in reversed(snaps) if s.get("start")), "")
+            if start_str:
+                try:
+                    start_dt = parse_ts_ct(start_str)
+                    if week_start <= start_dt <= week_end:
+                        filtered[mu] = snaps
+                except Exception:
+                    filtered[mu] = snaps
+            else:
+                filtered[mu] = snaps
+        if filtered:
+            return filtered
+
     return games
 
 
@@ -204,9 +243,14 @@ def plot_game(gid, snapshots, output_dir):
                         textcoords="offset points", xytext=(-9, -15),
                         fontsize=9, color=TEAL_BRIGHT, alpha=0.6, ha="right")
 
-    # Title with explicit favorite spread + total
-    fav_sp = format_spread_fav(away, home, dk_spreads[-1])
-    tot = dk_totals[-1]
+    # Title with explicit favorite spread + total from latest valid entries
+    valid_pairs = [(sp, tot) for sp, tot in zip(dk_spreads, dk_totals) if sp is not None and tot is not None]
+    if valid_pairs:
+        fav_sp = format_spread_fav(away, home, valid_pairs[-1][0])
+        tot = valid_pairs[-1][1]
+    else:
+        fav_sp = format_spread_fav(away, home, dk_spreads[-1] if dk_spreads else None)
+        tot = dk_totals[-1] if dk_totals else None
     tot_str = f"O/U {tot:.1f}" if tot is not None else ""
     ax.set_title(f"{away} @ {home}   |   {fav_sp}   |   {tot_str}",
                  fontsize=13, fontweight="bold", pad=12, loc="left", color=TEXT_TITLE)
@@ -259,9 +303,18 @@ def plot_game(gid, snapshots, output_dir):
 def build_board_rows(games_data):
     rows = []
     for gid, snaps in games_data.items():
-        first, last = snaps[0], snaps[-1]
-        away, home = last.get("away", "?"), last.get("home", "?")
-        day = game_day(last.get("start", ""))
+        if not snaps:
+            continue
+
+        valid_snaps = [s for s in snaps if s.get("dk_spread") is not None and s.get("dk_total") is not None]
+        first = valid_snaps[0] if valid_snaps else snaps[0]
+        last = valid_snaps[-1] if valid_snaps else snaps[-1]
+
+        latest_meta = snaps[-1]
+        away = latest_meta.get("away") or snaps[0].get("away", "?")
+        home = latest_meta.get("home") or snaps[0].get("home", "?")
+        start_time = latest_meta.get("start") or snaps[0].get("start", "")
+        day = game_day(start_time)
 
         dk_sp0 = first.get("dk_spread")
         dk_sp1 = last.get("dk_spread")
@@ -284,12 +337,12 @@ def build_board_rows(games_data):
         sp_fav_open = format_spread_fav(away, home, dk_sp0)
 
         # Classify slate window
-        slate_code, slate_label, slate_order = classify_slate_window(last.get("start", ""))
+        slate_code, slate_label, slate_order = classify_slate_window(start_time)
 
         rows.append({
             "away": away, "home": home, "day": day, "gid": gid,
             "n_snaps": len(snaps),
-            "start": last.get("start", ""),
+            "start": start_time,
             "slate_window": slate_code,
             "slate_label": slate_label,
             "slate_order": slate_order,
