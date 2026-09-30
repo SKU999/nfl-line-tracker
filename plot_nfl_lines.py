@@ -333,9 +333,19 @@ def plot_game(gid, snapshots, output_dir):
     return fname
 
 
+def get_stale_limit_hours(ref_dt=None):
+    """
+    On Sunday (when cadence is hourly / rapid steam), staleness flags after 1.5 hours (90 mins).
+    On other days (base 3-hour cadence), staleness flags after 4.0 hours.
+    """
+    dt = ref_dt or datetime.now(CT_TZ)
+    return 1.5 if dt.weekday() == 6 else 4.0
+
+
 def build_board_rows(games_data, latest_ts=None):
     rows = []
     latest_dt = parse_ts_ct(latest_ts) if latest_ts else datetime.now(CT_TZ)
+    stale_limit = get_stale_limit_hours(latest_dt)
 
     for gid, snaps in games_data.items():
         if not snaps:
@@ -367,7 +377,7 @@ def build_board_rows(games_data, latest_ts=None):
             try:
                 last_valid_dt = parse_ts_ct(last_valid_ts)
                 age_hrs = (latest_dt - last_valid_dt).total_seconds() / 3600.0
-                if age_hrs >= 4.0:
+                if age_hrs >= stale_limit:
                     is_stale_game = True
                 if last_valid_dt.date() == latest_dt.date():
                     last_valid_str = last_valid_dt.strftime("%-I:%M %p CT")
@@ -468,7 +478,8 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
                 initial_age_str = f"{stale_mins}m ago"
             else:
                 initial_age_str = f"{stale_hours:.1f} hrs ago"
-            if stale_hours >= 4.0:
+            stale_limit = get_stale_limit_hours(now_ct)
+            if stale_hours >= stale_limit:
                 is_stale = True
         except:
             pass
@@ -840,7 +851,9 @@ function updateDynamicFeedAge() {{
       ageSpan.textContent = hrs + 'h ' + remMins + 'm ago (' + diffHours.toFixed(1) + ' hrs)';
     }}
   }}
-  if (diffHours >= 4.0) {{
+  const isSunday = (now.getDay() === 0);
+  const staleLimit = isSunday ? 1.5 : 4.0;
+  if (diffHours >= staleLimit) {{
     if (!banner.classList.contains('stale')) {{
       banner.className = 'alert-banner stale';
     }}
