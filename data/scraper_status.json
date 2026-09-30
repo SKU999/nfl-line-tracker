@@ -1,5 +1,5 @@
 {
-  "ts": "2026-09-30T15:55:05.273147+00:00",
+  "ts": "2026-09-30T16:01:47.446892+00:00",
   "success": false,
   "error": "Failed to fetch https://4codds.com/api/v2/board/football (HTTP 403) after 4 retries.",
   "games_count": 0
