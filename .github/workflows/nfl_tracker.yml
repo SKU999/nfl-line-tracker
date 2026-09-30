@@ -59,7 +59,7 @@ jobs:
         run: |
           python -c "import sys; print('Python version:', sys.version)"
           python -c "import curl_cffi; print('curl_cffi version:', curl_cffi.__version__)"
-          python scrape_nfl_lines.py || echo "::warning::Scraper pull failed. Error recorded to dashboard status banner."
+          python scrape_nfl_lines.py || (echo "::warning::Scraper pull failed on GitHub runner (likely datacenter 403 block). Discarding failed status to preserve Mac's clean board." && git checkout data/ && true)
           python plot_nfl_lines.py
 
       - name: Commit snapshots and updated charts
