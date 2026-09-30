@@ -42,6 +42,7 @@ try:
 
     def _req(url, retries=4):
         global _session
+        last_err = "Unknown error"
         for attempt in range(retries):
             sess = get_session()
             try:
@@ -49,17 +50,20 @@ try:
                 if resp.status_code == 200:
                     return resp.json()
                 elif resp.status_code == 429:
+                    last_err = "HTTP 429 Rate Limit"
                     wait_sec = 2.5 * (attempt + 1)
                     print(f"[WARN] HTTP 429 Rate Limit on {url}, backing off {wait_sec:.1f}s...")
                     time.sleep(wait_sec)
                 else:
+                    last_err = f"HTTP {resp.status_code}"
                     print(f"[WARN] HTTP {resp.status_code} (attempt {attempt+1}) on {url}: {resp.text[:100]}")
             except Exception as e:
+                last_err = str(e)
                 print(f"[WARN] Request error (attempt {attempt+1}) on {url}: {e}")
                 # Reset session on connection error to get fresh socket
                 _session = None
             time.sleep(0.75 * (2 ** attempt))
-        raise Exception(f"Failed to fetch {url} after {retries} retries.")
+        raise Exception(f"Failed to fetch {url} ({last_err}) after {retries} retries.")
 except ImportError as err:
     print(f"[INIT] curl_cffi import failed: {err}, falling back to urllib.")
     import urllib.request
