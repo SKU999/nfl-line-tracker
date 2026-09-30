@@ -417,11 +417,10 @@ def build_board_rows(games_data, latest_ts=None):
 
 
 def delta_cell(d):
-    """Direction via text only: ▲ / ▼ / --, no color noise."""
+    """Spread delta: magnitude only, no directional arrow (arrow is ambiguous for home vs away favorites)."""
     if abs(d) < 0.1:
         return "<td class='flat'>--</td>"
-    arrow = "▲" if d > 0 else "▼"
-    return f"<td class='delta'>{arrow} {abs(d):.1f}</td>"
+    return f"<td class='delta'>{abs(d):.1f}</td>"
 
 
 def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
@@ -472,7 +471,7 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
             <b>PARTIAL FEED DEGRADATION:</b> {stale_count} of {len(board_rows)} games ({stale_names}) failed to update in latest scrape and are showing prior lines. Last scrape batch: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
         </div>"""
     else:
-        status_banner = f"""<div id='feed-banner' class='alert-banner healthy' data-feed-ts='{latest_ts}'>
+        status_banner = f"""<div id='feed-banner' class='alert-banner healthy' data-feed-ts='{latest_ts}' data-feed-ts-label='{last_success_str}'>
             <span class='status-dot'></span>
             <b>Feed Healthy:</b> All {len(board_rows)} games active & updated. Last snapshot captured <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
         </div>"""
@@ -753,10 +752,10 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
 <thead>
 <tr>
   <th>Matchup</th>
-  <th title="Earliest capture recorded by tracker this week (Saturday evening snapshot)">Tracker Baseline Spread</th>
+  <th title="Earliest capture recorded by tracker this week">Tracker Baseline Spread</th>
   <th>Current Spread</th>
   <th>Δ SP</th>
-  <th title="Earliest total recorded by tracker this week (Saturday evening snapshot)">Tracker Baseline Total</th>
+  <th title="Earliest total recorded by tracker this week">Tracker Baseline Total</th>
   <th>Current Total</th>
   <th>Δ Tot</th>
   <th>Away IT (Teal)</th>
@@ -801,10 +800,12 @@ function updateDynamicFeedAge() {{
       ageSpan.textContent = hrs + 'h ' + remMins + 'm ago (' + diffHours.toFixed(1) + ' hrs)';
     }}
   }}
-  if (diffHours >= 4.0 && !banner.classList.contains('stale')) {{
-    banner.className = 'alert-banner stale';
-    const strong = banner.querySelector('b');
-    if (strong) strong.textContent = 'Feed Stale \u2014 No Update in ' + Math.floor(diffHours * 10) / 10 + ' hrs:';
+  if (diffHours >= 4.0) {{
+    if (!banner.classList.contains('stale')) {{
+      banner.className = 'alert-banner stale';
+    }}
+    const hrsDisplay = (Math.floor(diffHours * 10) / 10).toFixed(1);
+    banner.innerHTML = "<span class='alert-icon'>\u26a0\ufe0f</span> <b>Feed Stale \u2014 No Update in " + hrsDisplay + " hrs.</b> Last snapshot: <span id='feed-time'>" + (banner.getAttribute('data-feed-ts-label') || '') + "</span>. Check cron.log for errors.";
   }}
 }}
 updateDynamicFeedAge();
