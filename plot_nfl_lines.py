@@ -356,7 +356,7 @@ def build_board_rows(games_data, latest_ts=None):
             try:
                 last_valid_dt = parse_ts_ct(last_valid_ts)
                 age_hrs = (latest_dt - last_valid_dt).total_seconds() / 3600.0
-                if age_hrs >= 3.5:
+                if age_hrs >= 4.0:
                     is_stale_game = True
                 if last_valid_dt.date() == latest_dt.date():
                     last_valid_str = last_valid_dt.strftime("%-I:%M %p CT")
@@ -389,6 +389,7 @@ def build_board_rows(games_data, latest_ts=None):
             "slate_order": slate_order,
             "sp_fav_open": sp_fav_open,
             "sp_fav_now": sp_fav_now,
+            "dk_sp0": dk_sp0, "dk_sp1": dk_sp1,
             "sp_d": sp_d,
             "t0": dk_t0, "t1": dk_t1, "t_d": t_d,
             "pin_sp": pin_sp, "pin_tot": pin_tot,
@@ -510,10 +511,22 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         reason_text = notes_list[-1]["note"] if notes_list else ""
         if not reason_text and r["max_move"] >= 0.5:
             move_parts = []
-            if abs(r["sp_d"]) >= 0.5:
-                move_parts.append(f"Spread {r['sp_d']:+.1f} ({r['sp_fav_open']}→{r['sp_fav_now']})")
+            if abs(r["sp_d"]) >= 0.5 and r["dk_sp0"] is not None and r["dk_sp1"] is not None:
+                # dk_sp0/dk_sp1 are the home team's line (positive = home is dog).
+                # Convert to the favorite's perspective so the sign is always negative.
+                fav_team = r["sp_fav_now"].split()[0] if r["sp_fav_now"] not in ("PK", "--") else ""
+                if r["dk_sp1"] > 0:
+                    # Away is favorite; their line is the negated home value
+                    fav_sp0 = -r["dk_sp0"]
+                    fav_sp1 = -r["dk_sp1"]
+                else:
+                    fav_sp0 = r["dk_sp0"]
+                    fav_sp1 = r["dk_sp1"]
+                sp0_str = f"{fav_sp0:+.1f}"
+                sp1_str = f"{fav_sp1:+.1f}"
+                move_parts.append(f"Spread {fav_team} {sp0_str} → {sp1_str}")
             if abs(r["t_d"]) >= 0.5:
-                move_parts.append(f"Total {r['t_d']:+.1f} ({r['t0']:.1f}→{r['t1']:.1f})")
+                move_parts.append(f"Total {r['t0']:.1f} → {r['t1']:.1f}")
             reason_text = "; ".join(move_parts)
         reason_cell = f"<td class='reason' title='{reason_text}'>{reason_text}</td>" if reason_text else "<td class='reason-empty'>--</td>"
 
@@ -788,8 +801,10 @@ function updateDynamicFeedAge() {{
       ageSpan.textContent = hrs + 'h ' + remMins + 'm ago (' + diffHours.toFixed(1) + ' hrs)';
     }}
   }}
-  if (diffHours >= 3.5 && !banner.classList.contains('stale')) {{
+  if (diffHours >= 4.0 && !banner.classList.contains('stale')) {{
     banner.className = 'alert-banner stale';
+    const strong = banner.querySelector('b');
+    if (strong) strong.textContent = 'Feed Stale \u2014 No Update in ' + Math.floor(diffHours * 10) / 10 + ' hrs:';
   }}
 }}
 updateDynamicFeedAge();
