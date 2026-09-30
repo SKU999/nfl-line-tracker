@@ -18,75 +18,73 @@ An automated, continuous NFL betting market tracker and visualization dashboard.
 - **Sharp Divergence Flags (`*`):** Any game where DraftKings diverges from Pinnacle by 1.0 or more points is automatically tagged with an orange indicator (`*`).
 - **Dynamic Browser Feed Age:** Client-side JavaScript ticks every 5 seconds to compute the exact feed age in the browser. It displays minute-level precision (`Xm ago`) and automatically flags the feed status if snapshots stall.
 - **Per-Game Freshness Pills:** A dedicated `Updated` column flags the exact time each game's odds were captured, distinguishing fresh lines from markets showing previous values.
-- **Movement Context & Notes:** Curated market context and weather/injury updates annotated directly on the board (`data/movement_reasons.json`), with automatic fallback summaries for significant movements (&ge; 0.5 pt).
+- **Movement Summary:** When a spread or total moves ≥ 0.5 pt from the tracker baseline, the board automatically shows what moved and by how much. Annotate a specific reason with `log_reason.py` — the note then appears in the Movement Context column alongside the auto-summary.
+
+---
+
+## ⚙️ Data Source
+
+Lines are pulled from a free, publicly accessible odds screen. This is an unofficial endpoint — suitable for personal research and prototyping. A production deployment should use a licensed odds feed (e.g. Sportradar, Pinnacle API).
 
 ---
 
 ## ⚙️ Data Architecture & Storage
 
 1. **Active Slate File (`data/nfl_lines.jsonl`):**
-   - High-performance, rolling view of the active NFL week.
-   - Automatically filtered by Tuesday-to-Tuesday NFL weekly windows.
+   - Rolling view of the current NFL week, filtered by Tuesday-to-Tuesday windows.
 2. **Immutable Perpetual Archive (`data/archive/nfl_lines_perpetual_raw.jsonl`):**
-   - Append-only, never truncated ledger storing raw market responses, consensus metrics, and book odds for historical backtesting and statistical analysis.
+   - Append-only ledger of every raw market snapshot; never truncated. For historical backtesting.
 3. **Proactive Snapshot Deduplication:**
-   - The scraper inspects the last recorded snapshot for each game before writing.
-   - If market numbers (`dk_spread`, `dk_total`, `pin_spread`, `pin_total`) have not moved and less than 75 minutes have elapsed, redundant duplicate writes are automatically suppressed.
-   - When a market line moves, snapshots are recorded immediately regardless of elapsed time.
+   - Before writing, the scraper checks whether the four primary market numbers (`dk_spread`, `dk_total`, `pin_spread`, `pin_total`) have changed since the last snapshot for that game.
+   - If unchanged and fewer than 75 minutes have elapsed, the duplicate is suppressed.
+   - Any movement triggers an immediate write regardless of elapsed time.
 
 ---
 
-## ⏰ Scrape Schedule & Dual-Runner Cadence
+## ⏰ Scrape Schedule
 
-The tracker uses a redundant dual-runner architecture combining GitHub Actions with a local Mac crontab to eliminate black holes:
+Runs via **GitHub Actions**, every 3 hours, 24/7:
 
-- **Base Cadence:** Runs every 3 hours, 24 hours a day, 7 days a week:
-  - `00:00`, `03:00`, `06:00`, `09:00`, `12:00`, `15:00`, `18:00`, `21:00` Central Time.
-  - GitHub Actions runs at minute 12 of these hours (`12 2,5,8,11,14,17,20,23 * * *` UTC) to bypass top-of-hour runner congestion.
-  - Local Mac cron runs at minute 00 of these hours.
-- **Sunday Kickoff Steam Windows:**
-  - `06:00 AM – 10:00 AM CT`: Hourly early-morning monitoring.
-  - `11:00 AM, 11:30 AM, 11:55 AM CT`: Pre-kickoff rapid steam capture before 12:00 PM kickoff.
-  - `03:00 PM, 03:20 PM CT`: Late afternoon steam capture before 3:25 PM window.
-  - `06:00 PM, 07:10 PM CT`: Sunday Night Football steam capture before 7:20 PM kickoff.
-- **Monday Night Football Steam Window:**
-  - `07:10 PM CT`: Final steam capture before 7:15 PM MNF kickoff.
+| Window | Times (CT) |
+| :--- | :--- |
+| Base cadence | 00:00, 03:00, 06:00, 09:00, 12:00, 15:00, 18:00, 21:00 |
+| Sunday early (hourly) | 06:00 AM – 10:00 AM |
+| Sunday pre-kickoff steam | 11:00 AM, 11:30 AM, 11:55 AM |
+| Sunday late steam | 3:00 PM, 3:20 PM |
+| SNF steam | 6:00 PM, 7:10 PM |
+| MNF steam | 7:10 PM (Monday) |
+
+GitHub Actions runs at minute 12 of each base hour to avoid top-of-hour runner queuing. On-demand scraping is also available via `workflow_dispatch` in the GitHub UI.
 
 ---
 
 ## 🛠️ Local Usage & CLI Commands
 
 ### 1. Run Scraper
-Fetches current lines using TLS browser impersonation via `curl_cffi` to prevent bot challenge blocks:
 ```bash
 python3 scrape_nfl_lines.py
 ```
 
 ### 2. Generate Charts & HTML Board
-Renders matplotlib time-series charts and compiles the HTML dashboard:
 ```bash
 python3 plot_nfl_lines.py
 ```
 
 ### 3. Log Movement Reasons
-Annotate market context for a game:
+Add a sourced note for a specific game (it will appear in the Movement Context column):
 ```bash
-# Add a reason for a line move:
-python3 log_reason.py "ARI @ NYG" "Sharp action on ARI; Giants protection issues flip favorite"
-
-# View all logged reasons:
+python3 log_reason.py "ARI @ NYG" "Giants ruled out LT Andrew Thomas — source: ESPN"
 python3 log_reason.py --list
 ```
 
-### 4. Manage Local Crontab
-Install or inspect the local schedule:
+### 4. Manage Local Crontab (optional backup runner)
 ```bash
-python3 setup_cron.py install   # Installs active cron entries
-python3 setup_cron.py status    # View active tracker cron jobs
-python3 setup_cron.py remove    # Cleanly remove tracker jobs
+python3 setup_cron.py install   # Add local cron entries
+python3 setup_cron.py status    # View active entries
+python3 setup_cron.py remove    # Remove entries
 ```
 
 ---
 
 ## 📜 License
-MIT License. Open source for NFL analytics, line-tracking research, and sports betting market analysis.
+MIT License. Open source for NFL analytics and line-tracking research.
