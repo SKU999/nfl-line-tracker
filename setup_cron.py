@@ -32,7 +32,7 @@ LOG_FILE = os.path.join(SCRIPT_DIR, "data", "cron.log")
 PYTHON = sys.executable or "/usr/bin/python3"
 
 MARKER = "# NFL-LINE-TRACKER"
-CMD = (
+INNER_CMD = (
     f'cd {SCRIPT_DIR} && '
     f'{PYTHON} {SCRAPER} >> {LOG_FILE} 2>&1 && '
     f'{PYTHON} {PLOTTER} >> {LOG_FILE} 2>&1 && '
@@ -41,6 +41,7 @@ CMD = (
     f'git pull --rebase -X ours origin main >> {LOG_FILE} 2>&1 && '
     f'git push origin main >> {LOG_FILE} 2>&1'
 )
+CMD = f"/usr/bin/caffeinate -u -t 240 /bin/bash -c '{INNER_CMD}'"
 
 CRON_LINES = [
     # 1. Base Cadence: Every 3 hours 24/7 (0, 3, 6, 9, 12, 15, 18, 21 CT)
