@@ -761,7 +761,7 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
   <th>Away IT (Teal)</th>
   <th>Home IT (Amber)</th>
   <th>Movement Context / Reason</th>
-  <th style="text-align: center;">Updated</th>
+  <th style="text-align: center;" title="Timestamp of latest recorded line snapshot (unchanged lines within 75m are deduplicated)">Last Recorded</th>
   <th style="text-align: center;">Snaps</th>
 </tr>
 </thead>
