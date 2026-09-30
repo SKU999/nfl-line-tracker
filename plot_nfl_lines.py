@@ -462,7 +462,7 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         status_banner = f"""<div id='feed-banner' class='alert-banner stale' data-feed-ts='{latest_ts}'>
             <span class='alert-icon'>⚠️</span>
             <b>SCRAPER STALE WARNING:</b> Last successful feed snapshot was <span id='feed-age-dynamic'>{initial_age_str}</span> (<span id='feed-time'>{last_success_str}</span>).
-            Check <code>data/cron.log</code> for errors.
+            Check GitHub Actions run log for details.
         </div>"""
     elif stale_count > 0:
         stale_names = ", ".join(f"{r['away']}@{r['home']}" for r in stale_games[:4])
@@ -805,7 +805,7 @@ function updateDynamicFeedAge() {{
       banner.className = 'alert-banner stale';
     }}
     const hrsDisplay = (Math.floor(diffHours * 10) / 10).toFixed(1);
-    banner.innerHTML = "<span class='alert-icon'>\u26a0\ufe0f</span> <b>Feed Stale \u2014 No Update in " + hrsDisplay + " hrs.</b> Last snapshot: <span id='feed-time'>" + (banner.getAttribute('data-feed-ts-label') || '') + "</span>. Check cron.log for errors.";
+    banner.innerHTML = "<span class='alert-icon'>\u26a0\ufe0f</span> <b>Feed Stale \u2014 No Update in " + hrsDisplay + " hrs.</b> Last snapshot: <span id='feed-time'>" + (banner.getAttribute('data-feed-ts-label') || '') + "</span>. Check GitHub Actions run log for details.";
   }}
 }}
 updateDynamicFeedAge();

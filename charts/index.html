@@ -178,7 +178,7 @@
 <p class='sub'>
   DraftKings pinned &middot; Cross-checked with Pinnacle (* = 1+ pt divergence).<br>
   Cadence: Every 3 hours, 24/7 (GitHub Actions) &middot; Sunday &amp; MNF rapid kickoff steam &middot; Baseline = tracker's earliest capture this week.<br>
-  Dashboard refreshed Wed Sep 30, 2026 8:55 AM CDT &middot; 219 snapshots recorded
+  Dashboard refreshed Wed Sep 30, 2026 9:28 AM CDT &middot; 220 snapshots recorded
   <span class='legend-box'>
     <span class='dot-teal'>■ Away Implied Total</span>
     <span class='dot-amber'>● Home Implied Total</span>
@@ -187,7 +187,7 @@
 
 <div id='feed-banner' class='alert-banner healthy' data-feed-ts='2026-09-30T14:00:02.590556+00:00' data-feed-ts-label='Wed Sep 30, 9:00 AM CDT'>
             <span class='status-dot'></span>
-            <b>Feed Healthy:</b> All 16 games active & updated. Last snapshot captured <span id='feed-time'>Wed Sep 30, 8:15 AM CDT</span> (<span id='feed-age-dynamic'>40m ago</span>).
+            <b>Feed Healthy:</b> All 16 games active & updated. Last snapshot captured <span id='feed-time'>Wed Sep 30, 9:00 AM CDT</span> (<span id='feed-age-dynamic'>28m ago</span>).
         </div>
 
 <table>
@@ -457,7 +457,7 @@
 </table>
 
 <div class='grid'>
-<div class='card thu-card'><img src='PIT_CLE.png?v=1790776557' alt='PIT @ CLE'></div><div class='card'><img src='IND_WAS.png?v=1790776557' alt='IND @ WAS'></div><div class='card'><img src='ARI_NYG.png?v=1790776557' alt='ARI @ NYG'></div><div class='card'><img src='GB_TB.png?v=1790776557' alt='GB @ TB'></div><div class='card'><img src='LAR_PHI.png?v=1790776557' alt='LAR @ PHI'></div><div class='card'><img src='NYJ_CHI.png?v=1790776557' alt='NYJ @ CHI'></div><div class='card'><img src='JAX_CIN.png?v=1790776557' alt='JAX @ CIN'></div><div class='card'><img src='NE_BUF.png?v=1790776557' alt='NE @ BUF'></div><div class='card'><img src='DAL_HOU.png?v=1790776557' alt='DAL @ HOU'></div><div class='card'><img src='TEN_BAL.png?v=1790776557' alt='TEN @ BAL'></div><div class='card'><img src='DEN_SF.png?v=1790776557' alt='DEN @ SF'></div><div class='card'><img src='MIA_MIN.png?v=1790776557' alt='MIA @ MIN'></div><div class='card'><img src='KC_LVR.png?v=1790776557' alt='KC @ LVR'></div><div class='card'><img src='LAC_SEA.png?v=1790776557' alt='LAC @ SEA'></div><div class='card'><img src='DET_CAR.png?v=1790776557' alt='DET @ CAR'></div><div class='card'><img src='ATL_NO.png?v=1790776557' alt='ATL @ NO'></div>
+<div class='card thu-card'><img src='PIT_CLE.png?v=1790778508' alt='PIT @ CLE'></div><div class='card'><img src='IND_WAS.png?v=1790778508' alt='IND @ WAS'></div><div class='card'><img src='ARI_NYG.png?v=1790778508' alt='ARI @ NYG'></div><div class='card'><img src='GB_TB.png?v=1790778508' alt='GB @ TB'></div><div class='card'><img src='LAR_PHI.png?v=1790778508' alt='LAR @ PHI'></div><div class='card'><img src='NYJ_CHI.png?v=1790778508' alt='NYJ @ CHI'></div><div class='card'><img src='JAX_CIN.png?v=1790778508' alt='JAX @ CIN'></div><div class='card'><img src='NE_BUF.png?v=1790778508' alt='NE @ BUF'></div><div class='card'><img src='DAL_HOU.png?v=1790778508' alt='DAL @ HOU'></div><div class='card'><img src='TEN_BAL.png?v=1790778508' alt='TEN @ BAL'></div><div class='card'><img src='DEN_SF.png?v=1790778508' alt='DEN @ SF'></div><div class='card'><img src='MIA_MIN.png?v=1790778508' alt='MIA @ MIN'></div><div class='card'><img src='KC_LVR.png?v=1790778508' alt='KC @ LVR'></div><div class='card'><img src='LAC_SEA.png?v=1790778508' alt='LAC @ SEA'></div><div class='card'><img src='DET_CAR.png?v=1790778508' alt='DET @ CAR'></div><div class='card'><img src='ATL_NO.png?v=1790778508' alt='ATL @ NO'></div>
 </div>
 
 <script>
@@ -491,7 +491,7 @@ function updateDynamicFeedAge() {
       banner.className = 'alert-banner stale';
     }
     const hrsDisplay = (Math.floor(diffHours * 10) / 10).toFixed(1);
-    banner.innerHTML = "<span class='alert-icon'>⚠️</span> <b>Feed Stale — No Update in " + hrsDisplay + " hrs.</b> Last snapshot: <span id='feed-time'>" + (banner.getAttribute('data-feed-ts-label') || '') + "</span>. Check cron.log for errors.";
+    banner.innerHTML = "<span class='alert-icon'>⚠️</span> <b>Feed Stale — No Update in " + hrsDisplay + " hrs.</b> Last snapshot: <span id='feed-time'>" + (banner.getAttribute('data-feed-ts-label') || '') + "</span>. Check GitHub Actions run log for details.";
   }
 }
 updateDynamicFeedAge();
