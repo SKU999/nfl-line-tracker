@@ -726,7 +726,7 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
 <h1>NFL Line Movement — DraftKings</h1>
 <p class='sub'>
   DraftKings pinned &middot; Cross-checked with Pinnacle (* = 1+ pt divergence).<br>
-  Cadence: Every 3 hours Tue–Sat &middot; Rapid kickoff steam on Sunday &amp; MNF &middot; Baseline is earliest capture of the week.<br>
+  Cadence: Every 3 hours, 24/7 (GitHub Actions) &middot; Sunday &amp; MNF rapid kickoff steam &middot; Baseline = tracker's earliest capture this week.<br>
   Dashboard refreshed {now_ct_str} &middot; {total_snaps} snapshots recorded
   <span class='legend-box'>
     <span class='dot-teal'>■ Away Implied Total</span>
