@@ -99,7 +99,7 @@ PRIMARY = "DRAFTKINGS"
 SHARP = "PINNACLE"
 
 
-def find_book_main_line(lines_dict, consensus, side_a, side_b, book):
+def find_book_main_line(lines_dict, consensus, side_a, side_b, book, current_line=None):
     """
     Find the book's main line:
     1. Collect all lines offered by the book.
@@ -148,12 +148,30 @@ def find_book_main_line(lines_dict, consensus, side_a, side_b, book):
             return (1, abs(abs(val) - 110), dist_cons)
 
     best = min(pool, key=score_line)
+
+    # Hysteresis: If current_line was previously recorded and is still available in the candidate pool,
+    # only switch to a new line if the new line is CLEARLY more balanced (vig diff at least 8 cents lower).
+    # This prevents artificial half-point flip-flops on negligible juice wiggles.
+    if current_line is not None:
+        curr_cand = next((c for c in pool if abs(c[0] - current_line) < 1e-4), None)
+        if curr_cand is not None:
+            curr_score = score_line(curr_cand)
+            best_score = score_line(best)
+            if curr_score[0] == 0 and best_score[0] == 0:
+                if best_score[1] >= curr_score[1] - 8:
+                    return curr_cand[0], curr_cand[1], curr_cand[2]
+
     return best[0], best[1], best[2]
 
 
-def process_game(game):
+def process_game(game, prev_snap=None):
     gid = game["id"]
     consensus = game.get("main", {})
+    prev_dk_sp = prev_snap.get("dk_spread") if prev_snap else None
+    prev_dk_tot = prev_snap.get("dk_total") if prev_snap else None
+    prev_pin_sp = prev_snap.get("pin_spread") if prev_snap else None
+    prev_pin_tot = prev_snap.get("pin_total") if prev_snap else None
+
     snap = {
         "ts": datetime.now(timezone.utc).isoformat(),
         "game_id": gid,
@@ -171,12 +189,12 @@ def process_game(game):
         sp = _req(GAME_MKT_URL.format(gid=gid, mkt="sp"))
         lines = sp.get("lines", {})
 
-        lv, ho, ao = find_book_main_line(lines, consensus.get("sp"), "home", "away", PRIMARY)
+        lv, ho, ao = find_book_main_line(lines, consensus.get("sp"), "home", "away", PRIMARY, current_line=prev_dk_sp)
         snap["dk_spread"] = lv
         snap["dk_sp_home_odds"] = ho
         snap["dk_sp_away_odds"] = ao
 
-        lv2, ho2, ao2 = find_book_main_line(lines, consensus.get("sp"), "home", "away", SHARP)
+        lv2, ho2, ao2 = find_book_main_line(lines, consensus.get("sp"), "home", "away", SHARP, current_line=prev_pin_sp)
         snap["pin_spread"] = lv2
         snap["pin_sp_home_odds"] = ho2
         snap["pin_sp_away_odds"] = ao2
@@ -191,12 +209,12 @@ def process_game(game):
         tot = _req(GAME_MKT_URL.format(gid=gid, mkt="tot"))
         lines = tot.get("lines", {})
 
-        lv, ov, un = find_book_main_line(lines, consensus.get("tot"), "over", "under", PRIMARY)
+        lv, ov, un = find_book_main_line(lines, consensus.get("tot"), "over", "under", PRIMARY, current_line=prev_dk_tot)
         snap["dk_total"] = lv
         snap["dk_tot_over"] = ov
         snap["dk_tot_under"] = un
 
-        lv2, ov2, un2 = find_book_main_line(lines, consensus.get("tot"), "over", "under", SHARP)
+        lv2, ov2, un2 = find_book_main_line(lines, consensus.get("tot"), "over", "under", SHARP, current_line=prev_pin_tot)
         snap["pin_total"] = lv2
         snap["pin_tot_over"] = ov2
         snap["pin_tot_under"] = un2
@@ -308,10 +326,13 @@ def main():
         games = [g for g in board.get("games", []) if g.get("league") == "NFL"]
         print(f"[{ts}] Processing {len(games)} NFL games for perpetual archive...")
 
+        latest_by_game = load_latest_snapshots()
         snaps = []
         for g in games:
+            mu = f"{g['away']['short']}@{g['home']['short']}"
+            prev_snap = latest_by_game.get(mu)
             try:
-                s = process_game(g)
+                s = process_game(g, prev_snap=prev_snap)
                 snaps.append(s)
             except Exception as ge:
                 print(f"[WARN] Error processing game {g.get('id')}: {ge}")

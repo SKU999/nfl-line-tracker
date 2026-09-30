@@ -34,7 +34,7 @@ PYTHON = sys.executable or "/usr/bin/python3"
 MARKER = "# NFL-LINE-TRACKER"
 INNER_CMD = (
     f'cd {SCRIPT_DIR} && '
-    f'{PYTHON} {SCRAPER} >> {LOG_FILE} 2>&1 && '
+    f'({PYTHON} {SCRAPER} || true) >> {LOG_FILE} 2>&1 && '
     f'{PYTHON} {PLOTTER} >> {LOG_FILE} 2>&1 && '
     f'git add data/ charts/ >> {LOG_FILE} 2>&1 && '
     f'(git diff --cached --quiet || git commit -m "auto: local cron sync [skip ci]") >> {LOG_FILE} 2>&1 && '
