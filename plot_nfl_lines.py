@@ -86,6 +86,28 @@ def load_data(active_only=True):
 
     for mu in list(games.keys()):
         games[mu].sort(key=lambda s: s.get("ts", ""))
+        deduped = []
+        for s in games[mu]:
+            if not deduped:
+                deduped.append(s)
+                continue
+            prev = deduped[-1]
+            try:
+                t1 = datetime.fromisoformat(prev["ts"].replace("Z", "+00:00"))
+                t2 = datetime.fromisoformat(s["ts"].replace("Z", "+00:00"))
+                diff_min = abs((t2 - t1).total_seconds()) / 60.0
+            except:
+                diff_min = 999.0
+            lines_same = (
+                s.get("dk_spread") == prev.get("dk_spread") and
+                s.get("dk_total") == prev.get("dk_total") and
+                s.get("pin_spread") == prev.get("pin_spread") and
+                s.get("pin_total") == prev.get("pin_total")
+            )
+            if lines_same and diff_min < 75.0:
+                continue
+            deduped.append(s)
+        games[mu] = deduped
 
     if active_only:
         filtered = {}
@@ -409,14 +431,24 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
 
     # Staleness check: compare latest snapshot timestamp to current time
     stale_hours = 0.0
+    stale_mins = 0
     is_stale = False
     last_success_str = "Unknown"
+    initial_age_str = "just now"
     if latest_ts:
         try:
             last_ct = parse_ts_ct(latest_ts)
             diff = now_ct - last_ct
-            stale_hours = max(0.0, diff.total_seconds() / 3600.0)
+            sec = max(0, int(diff.total_seconds()))
+            stale_mins = sec // 60
+            stale_hours = sec / 3600.0
             last_success_str = last_ct.strftime("%a %b %d, %-I:%M %p %Z")
+            if stale_mins < 1:
+                initial_age_str = "just now"
+            elif stale_mins < 60:
+                initial_age_str = f"{stale_mins}m ago"
+            else:
+                initial_age_str = f"{stale_hours:.1f} hrs ago"
             if stale_hours >= 4.0:
                 is_stale = True
         except:
@@ -429,19 +461,19 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
     if is_stale:
         status_banner = f"""<div id='feed-banner' class='alert-banner stale' data-feed-ts='{latest_ts}'>
             <span class='alert-icon'>⚠️</span>
-            <b>SCRAPER STALE WARNING:</b> Last successful feed snapshot was <span id='feed-age-dynamic'>{stale_hours:.1f} hours ago</span> (<span id='feed-time'>{last_success_str}</span>).
+            <b>SCRAPER STALE WARNING:</b> Last successful feed snapshot was <span id='feed-age-dynamic'>{initial_age_str}</span> (<span id='feed-time'>{last_success_str}</span>).
             Check <code>data/cron.log</code> for errors.
         </div>"""
     elif stale_count > 0:
         stale_names = ", ".join(f"{r['away']}@{r['home']}" for r in stale_games[:4])
         status_banner = f"""<div id='feed-banner' class='alert-banner warning' data-feed-ts='{latest_ts}'>
             <span class='alert-icon'>⚠️</span>
-            <b>PARTIAL FEED DEGRADATION:</b> {stale_count} of {len(board_rows)} games ({stale_names}) failed to update in latest scrape and are showing prior lines. Last scrape batch: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{stale_hours:.1f} hrs ago</span>).
+            <b>PARTIAL FEED DEGRADATION:</b> {stale_count} of {len(board_rows)} games ({stale_names}) failed to update in latest scrape and are showing prior lines. Last scrape batch: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
         </div>"""
     else:
         status_banner = f"""<div id='feed-banner' class='alert-banner healthy' data-feed-ts='{latest_ts}'>
             <span class='status-dot'></span>
-            <b>Feed Healthy:</b> All {len(board_rows)} games active & updated. Last snapshot captured <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{stale_hours:.1f} hrs ago</span>).
+            <b>Feed Healthy:</b> All {len(board_rows)} games active & updated. Last snapshot captured <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
         </div>"""
 
     table_rows = []
@@ -476,6 +508,13 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         mu_key = f"{r['away']} @ {r['home']}"
         notes_list = all_reasons.get(mu_key, [])
         reason_text = notes_list[-1]["note"] if notes_list else ""
+        if not reason_text and r["max_move"] >= 0.5:
+            move_parts = []
+            if abs(r["sp_d"]) >= 0.5:
+                move_parts.append(f"Spread {r['sp_d']:+.1f} ({r['sp_fav_open']}→{r['sp_fav_now']})")
+            if abs(r["t_d"]) >= 0.5:
+                move_parts.append(f"Total {r['t_d']:+.1f} ({r['t0']:.1f}→{r['t1']:.1f})")
+            reason_text = "; ".join(move_parts)
         reason_cell = f"<td class='reason' title='{reason_text}'>{reason_text}</td>" if reason_text else "<td class='reason-empty'>--</td>"
 
         lv_str = r["last_valid_str"]
@@ -569,7 +608,7 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
   .flat {{ color: #3E4259; }}
   .it-away {{ color: {TEAL_BRIGHT}; font-weight: 600; }}
   .it-home {{ color: {AMBER_BRIGHT}; font-weight: 600; }}
-  .reason {{ color: #E0E2EC; font-size: 11.5px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+  .reason {{ color: #E0E2EC; font-size: 11.5px; max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
   .reason-empty {{ color: #35384B; font-size: 11px; }}
   .snaps {{ color: #4E526B; font-size: 11px; text-align: center; }}
   .tag {{
@@ -732,13 +771,21 @@ function updateDynamicFeedAge() {{
   const feedDate = new Date(tsStr);
   if (isNaN(feedDate.getTime())) return;
   const now = new Date();
-  const diffHours = (now - feedDate) / (1000 * 60 * 60);
+  const diffMs = Math.max(0, now - feedDate);
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSec / 60);
+  const diffHours = diffMs / (1000 * 60 * 60);
+
   const ageSpan = document.getElementById('feed-age-dynamic');
   if (ageSpan) {{
-    if (diffHours < 0.1) {{
-      ageSpan.textContent = 'just now';
+    if (diffSec < 60) {{
+      ageSpan.textContent = 'just now (' + diffSec + 's ago)';
+    }} else if (diffMins < 60) {{
+      ageSpan.textContent = diffMins + 'm ago';
     }} else {{
-      ageSpan.textContent = diffHours.toFixed(1) + ' hrs ago';
+      const hrs = Math.floor(diffMins / 60);
+      const remMins = diffMins % 60;
+      ageSpan.textContent = hrs + 'h ' + remMins + 'm ago (' + diffHours.toFixed(1) + ' hrs)';
     }}
   }}
   if (diffHours >= 3.5 && !banner.classList.contains('stale')) {{
@@ -746,7 +793,7 @@ function updateDynamicFeedAge() {{
   }}
 }}
 updateDynamicFeedAge();
-setInterval(updateDynamicFeedAge, 30000);
+setInterval(updateDynamicFeedAge, 5000);
 </script>
 </body>
 </html>"""

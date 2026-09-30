@@ -43,8 +43,8 @@ CMD = (
 )
 
 CRON_LINES = [
-    # 1. Tue-Sat every 3 hours
-    f"0 0,3,6,9,12,15,18,21 * * 2,3,4,5,6 {CMD} {MARKER}",
+    # 1. Base Cadence: Every 3 hours 24/7 (0, 3, 6, 9, 12, 15, 18, 21 CT)
+    f"0 0,3,6,9,12,15,18,21 * * * {CMD} {MARKER}",
     # 2. Sunday Early Window: 6,7,8,9,10 AM hourly
     f"0 6,7,8,9,10 * * 0 {CMD} {MARKER}",
     # 3. Sunday Early Kickoff Steam: 11:00, 11:30, 11:55 AM

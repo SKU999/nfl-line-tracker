@@ -196,19 +196,73 @@ def process_game(game):
     return snap
 
 
+def load_latest_snapshots():
+    latest = {}
+    if not os.path.exists(DATA_FILE):
+        return latest
+    try:
+        with open(DATA_FILE, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                s = json.loads(line)
+                mu = f"{s.get('away')}@{s.get('home')}"
+                latest[mu] = s
+    except Exception as e:
+        print(f"[WARN] Error reading existing snapshots for dedup: {e}")
+    return latest
+
+
+def is_duplicate_snapshot(curr, prev):
+    if not prev:
+        return False
+    try:
+        t1 = datetime.fromisoformat(prev["ts"].replace("Z", "+00:00"))
+        t2 = datetime.fromisoformat(curr["ts"].replace("Z", "+00:00"))
+        diff_min = abs((t2 - t1).total_seconds()) / 60.0
+    except Exception:
+        diff_min = 999.0
+
+    lines_identical = (
+        curr.get("dk_spread") == prev.get("dk_spread") and
+        curr.get("dk_total") == prev.get("dk_total") and
+        curr.get("pin_spread") == prev.get("pin_spread") and
+        curr.get("pin_total") == prev.get("pin_total")
+    )
+    # If lines haven't moved and less than 75 minutes have elapsed, it's a redundant duplicate run
+    return lines_identical and (diff_min < 75.0)
+
+
 def save_snapshots(snapshots):
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
 
-    # 1. Active working file
-    with open(DATA_FILE, "a") as f:
-        for snap in snapshots:
-            f.write(json.dumps(snap) + "\n")
+    latest_by_game = load_latest_snapshots()
+    to_save = []
+    skipped = 0
 
-    # 2. Immutable Perpetual Raw Archive (Kept forever for historical backtesting)
-    with open(PERPETUAL_FILE, "a") as f:
-        for snap in snapshots:
-            f.write(json.dumps(snap) + "\n")
+    for snap in snapshots:
+        mu = f"{snap.get('away')}@{snap.get('home')}"
+        prev = latest_by_game.get(mu)
+        if is_duplicate_snapshot(snap, prev):
+            skipped += 1
+            continue
+        to_save.append(snap)
+        latest_by_game[mu] = snap
+
+    if to_save:
+        # 1. Active working file
+        with open(DATA_FILE, "a") as f:
+            for snap in to_save:
+                f.write(json.dumps(snap) + "\n")
+
+        # 2. Immutable Perpetual Raw Archive
+        with open(PERPETUAL_FILE, "a") as f:
+            for snap in to_save:
+                f.write(json.dumps(snap) + "\n")
+
+    print(f"[STORAGE] Saved {len(to_save)} new/changed snapshots ({skipped} duplicate/unchanged within 75m suppressed).")
 
 
 def main():
