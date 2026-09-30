@@ -17,37 +17,44 @@ from datetime import datetime, timezone
 try:
     from curl_cffi import requests
     print("[INIT] curl_cffi successfully loaded.")
-    
-    def _req(url, retries=3):
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Referer": "https://4codds.com/",
-            "Origin": "https://4codds.com",
-            "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-            "Sec-Ch-Ua-Mobile": "?0",
-            "Sec-Ch-Ua-Platform": '"Windows"',
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin",
-        }
+
+    _session = None
+
+    def get_session():
+        global _session
+        if _session is None:
+            _session = requests.Session(impersonate="chrome124")
+            _session.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Referer": "https://4codds.com/",
+                "Origin": "https://4codds.com",
+                "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+                "Sec-Ch-Ua-Mobile": "?0",
+                "Sec-Ch-Ua-Platform": '"Windows"',
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin",
+            })
+        return _session
+
+    def _req(url, retries=4):
+        sess = get_session()
         for attempt in range(retries):
-            for impersonate_target in ["chrome124", "chrome120", "safari17_0"]:
-                try:
-                    resp = requests.get(
-                        url,
-                        impersonate=impersonate_target,
-                        timeout=25,
-                        headers=headers
-                    )
-                    if resp.status_code == 200:
-                        return resp.json()
-                    print(f"[WARN] HTTP {resp.status_code} ({impersonate_target}) on {url}: {resp.text[:120]}")
-                except Exception as e:
-                    print(f"[WARN] Request error ({impersonate_target}) on {url}: {e}")
-                time.sleep(0.5)
-            time.sleep(1.0)
+            try:
+                resp = sess.get(url, timeout=25)
+                if resp.status_code == 200:
+                    return resp.json()
+                elif resp.status_code == 429:
+                    wait_sec = 2.5 * (attempt + 1)
+                    print(f"[WARN] HTTP 429 Rate Limit on {url}, backing off {wait_sec:.1f}s...")
+                    time.sleep(wait_sec)
+                else:
+                    print(f"[WARN] HTTP {resp.status_code} (attempt {attempt+1}) on {url}: {resp.text[:100]}")
+            except Exception as e:
+                print(f"[WARN] Request error (attempt {attempt+1}) on {url}: {e}")
+            time.sleep(0.75 * (2 ** attempt))
         raise Exception(f"Failed to fetch {url} after {retries} retries.")
 except ImportError as err:
     print(f"[INIT] curl_cffi import failed: {err}, falling back to urllib.")
@@ -157,8 +164,9 @@ def process_game(game):
         snap["pin_sp_away_odds"] = ao2
     except Exception as e:
         snap["sp_error"] = str(e)
+        print(f"[ERROR] Failed to fetch SP for {gid} ({snap.get('away')}@{snap.get('home')}): {e}")
 
-    time.sleep(0.12)
+    time.sleep(0.35)
 
     # Total
     try:
@@ -176,6 +184,7 @@ def process_game(game):
         snap["pin_tot_under"] = un2
     except Exception as e:
         snap["tot_error"] = str(e)
+        print(f"[ERROR] Failed to fetch TOT for {gid} ({snap.get('away')}@{snap.get('home')}): {e}")
 
     # Implied Team Totals
     dk_sp = snap.get("dk_spread")
@@ -215,7 +224,7 @@ def main():
             snaps.append(s)
         except Exception as ge:
             print(f"[WARN] Error processing game {g.get('id')}: {ge}")
-        time.sleep(0.12)
+        time.sleep(0.4)
 
     if snaps:
         save_snapshots(snaps)

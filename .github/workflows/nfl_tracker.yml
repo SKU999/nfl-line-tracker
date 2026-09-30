@@ -5,13 +5,9 @@ on:
     branches:
       - main
   schedule:
-    # Wed-Sat every 3 hours (CT = UTC-5: 00,03,06,09,12,15,18,21 CT -> 05,08,11,14,17,20,23,02 UTC)
-    # Using minute 12 to bypass GitHub Actions top-of-hour scheduling congestion
-    - cron: '12 5,8,11,14,17,20,23 * * 3,4,5,6'
-    - cron: '12 2 * * 4,5,6,0'
-    
-    # Sunday Early Window: 6 AM - 10 AM CT (11,12,13,14,15 UTC)
-    - cron: '0 11,12,13,14,15 * * 0'
+    # Base Cadence: Every 3 hours, 7 days a week (UTC-5: 00,03,06,09,12,15,18,21 CT -> 05,08,11,14,17,20,23,02 UTC)
+    # Minute 12 avoids top-of-hour GitHub Actions queuing bottlenecks
+    - cron: '12 2,5,8,11,14,17,20,23 * * *'
     
     # Sunday Kickoff Steam: 11:00 AM, 11:30 AM, 11:55 AM CT (16:00, 16:30, 16:55 UTC)
     - cron: '0,30,55 16 * * 0'
@@ -19,15 +15,12 @@ on:
     # Sunday 3:25 PM Late Window Steam: 3:00 PM, 3:20 PM CT (20:00, 20:20 UTC)
     - cron: '0,20 20 * * 0'
     
-    # Sunday Night Football Steam: 6:00 PM (23:00 UTC), 7:10 PM CT (00:10 UTC Mon), 10:00 PM CT (03:00 UTC Mon)
+    # Sunday Night Football Steam: 6:00 PM (23:00 UTC Sun) & 7:10 PM CT (00:10 UTC Mon)
     - cron: '0 23 * * 0'
     - cron: '10 0 * * 1'
-    - cron: '0 3 * * 1'
     
-    # Monday Window & MNF Steam: 9am, 12pm, 3pm, 6pm CT (14, 17, 20, 23 UTC) + 7:10pm CT (00:10 Tue UTC)
-    - cron: '0 14,17,20,23 * * 1'
+    # Monday Night Football Steam: 7:10 PM CT (00:10 UTC Tue)
     - cron: '10 0 * * 2'
-    - cron: '30 3 * * 2'
 
   # Manual on-demand trigger button in GitHub UI
   workflow_dispatch:

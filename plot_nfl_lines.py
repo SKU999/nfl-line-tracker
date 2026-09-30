@@ -300,8 +300,10 @@ def plot_game(gid, snapshots, output_dir):
     return fname
 
 
-def build_board_rows(games_data):
+def build_board_rows(games_data, latest_ts=None):
     rows = []
+    latest_dt = parse_ts_ct(latest_ts) if latest_ts else datetime.now(CT_TZ)
+
     for gid, snaps in games_data.items():
         if not snaps:
             continue
@@ -323,6 +325,23 @@ def build_board_rows(games_data):
 
         pin_sp = last.get("pin_spread")
         pin_tot = last.get("pin_total")
+
+        # Per-game staleness check relative to latest scrape run
+        last_valid_ts = last.get("ts")
+        is_stale_game = False
+        last_valid_str = "Unknown"
+        if last_valid_ts:
+            try:
+                last_valid_dt = parse_ts_ct(last_valid_ts)
+                age_hrs = (latest_dt - last_valid_dt).total_seconds() / 3600.0
+                if age_hrs >= 3.5:
+                    is_stale_game = True
+                if last_valid_dt.date() == latest_dt.date():
+                    last_valid_str = last_valid_dt.strftime("%-I:%M %p CT")
+                else:
+                    last_valid_str = last_valid_dt.strftime("%a %-I:%M %p CT")
+            except Exception:
+                pass
 
         # Movement deltas from baseline snapshot
         sp_d = (dk_sp1 - dk_sp0) if dk_sp1 is not None and dk_sp0 is not None else 0
@@ -356,6 +375,9 @@ def build_board_rows(games_data):
             "hi": last.get("home_impl"),
             "max_move": max(abs(sp_d), abs(t_d)),
             "is_thu": slate_code == "TNF",
+            "is_stale_game": is_stale_game,
+            "last_valid_str": last_valid_str,
+            "last_valid_ts": last_valid_ts,
         })
 
     # Sort logic:
@@ -400,17 +422,26 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         except:
             pass
 
+    stale_games = [r for r in board_rows if r.get("is_stale_game")]
+    stale_count = len(stale_games)
+
     # Status Badge
     if is_stale:
-        status_banner = f"""<div class='alert-banner stale'>
+        status_banner = f"""<div id='feed-banner' class='alert-banner stale' data-feed-ts='{latest_ts}'>
             <span class='alert-icon'>⚠️</span>
-            <b>SCRAPER STALE WARNING:</b> Last successful snapshot was <b>{stale_hours:.1f} hours ago</b> ({last_success_str}).
-            Expected run interval is 3 hours. Check <code>data/cron.log</code> for errors.
+            <b>SCRAPER STALE WARNING:</b> Last successful feed snapshot was <span id='feed-age-dynamic'>{stale_hours:.1f} hours ago</span> (<span id='feed-time'>{last_success_str}</span>).
+            Check <code>data/cron.log</code> for errors.
+        </div>"""
+    elif stale_count > 0:
+        stale_names = ", ".join(f"{r['away']}@{r['home']}" for r in stale_games[:4])
+        status_banner = f"""<div id='feed-banner' class='alert-banner warning' data-feed-ts='{latest_ts}'>
+            <span class='alert-icon'>⚠️</span>
+            <b>PARTIAL FEED DEGRADATION:</b> {stale_count} of {len(board_rows)} games ({stale_names}) failed to update in latest scrape and are showing prior lines. Last scrape batch: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{stale_hours:.1f} hrs ago</span>).
         </div>"""
     else:
-        status_banner = f"""<div class='alert-banner healthy'>
+        status_banner = f"""<div id='feed-banner' class='alert-banner healthy' data-feed-ts='{latest_ts}'>
             <span class='status-dot'></span>
-            <b>Feed Healthy:</b> Last snapshot captured <b>{last_success_str}</b> ({stale_hours:.1f} hrs ago).
+            <b>Feed Healthy:</b> All {len(board_rows)} games active & updated. Last snapshot captured <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{stale_hours:.1f} hrs ago</span>).
         </div>"""
 
     table_rows = []
@@ -421,7 +452,7 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         if r["slate_window"] != current_slate:
             current_slate = r["slate_window"]
             table_rows.append(f"""<tr class='slate-sep-row' data-slate='{r["slate_window"]}'>
-                <td colspan='11' class='slate-sep-cell'>
+                <td colspan='12' class='slate-sep-cell'>
                     <span class='sep-dash'>────</span>
                     <span class='sep-label'>{r["slate_label"]}</span>
                     <span class='sep-dash'>────</span>
@@ -447,6 +478,12 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         reason_text = notes_list[-1]["note"] if notes_list else ""
         reason_cell = f"<td class='reason' title='{reason_text}'>{reason_text}</td>" if reason_text else "<td class='reason-empty'>--</td>"
 
+        lv_str = r["last_valid_str"]
+        if r["is_stale_game"]:
+            updated_cell = f"<td style='text-align:center;'><span class='pill-stale' title='Market failed on latest scraper run. Showing last verified line from {lv_str}.'>⚠️ {lv_str}</span></td>"
+        else:
+            updated_cell = f"<td style='text-align:center;'><span class='pill-fresh'>{lv_str}</span></td>"
+
         table_rows.append(f"""<tr class='{row_cls}' data-slate='{r["slate_window"]}'>
             <td class='mu'>{tag}{r['away']} @ <b>{r['home']}</b></td>
             <td>{r['sp_fav_open']}</td>
@@ -458,6 +495,7 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
             <td class='it-away'>{away_it_str}</td>
             <td class='it-home'>{home_it_str}</td>
             {reason_cell}
+            {updated_cell}
             <td class='snaps'>{r['n_snaps']}</td>
         </tr>""")
 
@@ -585,12 +623,36 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
     border: 1px solid rgba(34, 184, 160, 0.35);
     color: #4FE1C8;
   }}
+  .alert-banner.warning {{
+    background: rgba(255, 170, 0, 0.12);
+    border: 1px solid rgba(255, 170, 0, 0.4);
+    color: #FFB300;
+  }}
   .alert-banner.stale {{
     background: rgba(255, 68, 68, 0.15);
     border: 1px solid rgba(255, 68, 68, 0.5);
     color: #FF7070;
     font-size: 13px;
     animation: pulse 2s infinite;
+  }}
+  .pill-fresh {{
+    background: rgba(34, 184, 160, 0.15);
+    color: #4FE1C8;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+  }}
+  .pill-stale {{
+    background: rgba(255, 170, 0, 0.18);
+    color: #FFB300;
+    border: 1px solid rgba(255, 170, 0, 0.4);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
   }}
   .status-dot {{
     width: 8px;
@@ -624,7 +686,8 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
 <body>
 <h1>NFL Line Movement — DraftKings</h1>
 <p class='sub'>
-  DraftKings pinned. Cross-checked with Pinnacle (* = 1+ pt divergence).<br>
+  DraftKings pinned &middot; Cross-checked with Pinnacle (* = 1+ pt divergence).<br>
+  Cadence: Every 3 hours Tue–Sat &middot; Rapid kickoff steam on Sunday &amp; MNF &middot; Baseline is earliest capture of the week.<br>
   Dashboard refreshed {now_ct_str} &middot; {total_snaps} snapshots recorded
   <span class='legend-box'>
     <span class='dot-teal'>■ Away Implied Total</span>
@@ -638,15 +701,16 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
 <thead>
 <tr>
   <th>Matchup</th>
-  <th>Baseline Spread</th>
+  <th title="Earliest capture recorded by tracker this week (Saturday evening snapshot)">Tracker Baseline Spread</th>
   <th>Current Spread</th>
   <th>Δ SP</th>
-  <th>Baseline Total</th>
+  <th title="Earliest total recorded by tracker this week (Saturday evening snapshot)">Tracker Baseline Total</th>
   <th>Current Total</th>
   <th>Δ Tot</th>
   <th>Away IT (Teal)</th>
   <th>Home IT (Amber)</th>
   <th>Movement Context / Reason</th>
+  <th style="text-align: center;">Updated</th>
   <th style="text-align: center;">Snaps</th>
 </tr>
 </thead>
@@ -658,6 +722,32 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
 <div class='grid'>
 {''.join(cards)}
 </div>
+
+<script>
+function updateDynamicFeedAge() {{
+  const banner = document.getElementById('feed-banner');
+  if (!banner) return;
+  const tsStr = banner.getAttribute('data-feed-ts');
+  if (!tsStr) return;
+  const feedDate = new Date(tsStr);
+  if (isNaN(feedDate.getTime())) return;
+  const now = new Date();
+  const diffHours = (now - feedDate) / (1000 * 60 * 60);
+  const ageSpan = document.getElementById('feed-age-dynamic');
+  if (ageSpan) {{
+    if (diffHours < 0.1) {{
+      ageSpan.textContent = 'just now';
+    }} else {{
+      ageSpan.textContent = diffHours.toFixed(1) + ' hrs ago';
+    }}
+  }}
+  if (diffHours >= 3.5 && !banner.classList.contains('stale')) {{
+    banner.className = 'alert-banner stale';
+  }}
+}}
+updateDynamicFeedAge();
+setInterval(updateDynamicFeedAge, 30000);
+</script>
 </body>
 </html>"""
 
@@ -679,8 +769,6 @@ def main():
         else:
             print(f"  {m}: skipped")
 
-    board_rows = build_board_rows(games)
-    
     # Extract latest snapshot timestamp across all games
     latest_ts = None
     for snaps in games.values():
@@ -688,6 +776,8 @@ def main():
             ts = snaps[-1].get("ts")
             if ts and (latest_ts is None or ts > latest_ts):
                 latest_ts = ts
+
+    board_rows = build_board_rows(games, latest_ts=latest_ts)
 
     generate_html(chart_files, board_rows, CHART_DIR, latest_ts=latest_ts)
     print(f"\nGenerated {len(chart_files)} charts -> {CHART_DIR}/index.html")
