@@ -10,6 +10,7 @@ NFL Line Tracker — Scraper (v6 Perpetual Archive)
 
 import json
 import os
+import sys
 import time
 from datetime import datetime, timezone
 
@@ -40,8 +41,9 @@ try:
         return _session
 
     def _req(url, retries=4):
-        sess = get_session()
+        global _session
         for attempt in range(retries):
+            sess = get_session()
             try:
                 resp = sess.get(url, timeout=25)
                 if resp.status_code == 200:
@@ -54,6 +56,8 @@ try:
                     print(f"[WARN] HTTP {resp.status_code} (attempt {attempt+1}) on {url}: {resp.text[:100]}")
             except Exception as e:
                 print(f"[WARN] Request error (attempt {attempt+1}) on {url}: {e}")
+                # Reset session on connection error to get fresh socket
+                _session = None
             time.sleep(0.75 * (2 ** attempt))
         raise Exception(f"Failed to fetch {url} after {retries} retries.")
 except ImportError as err:
@@ -85,52 +89,62 @@ EXCLUDE_BOOKS = {
     "PREDICTFUN", "PROPHETX", "REBET",
 }
 
+STATUS_FILE = os.path.join(DATA_DIR, "scraper_status.json")
+
 PRIMARY = "DRAFTKINGS"
 SHARP = "PINNACLE"
 
 
-def find_book_at_line(lines_dict, line_val, side, book):
-    key = str(line_val)
-    for k in [key, key.rstrip("0").rstrip("."), key + ".0"]:
-        if k in lines_dict:
-            for entry in lines_dict[k].get(side, []):
-                if entry[0] == book:
-                    return float(k) if "." in k else int(k), entry[1]
-    return None, None
-
-
 def find_book_main_line(lines_dict, consensus, side_a, side_b, book):
-    if consensus is not None:
-        for offset in [0, 0.5, -0.5, 1, -1]:
-            candidate = consensus + offset
-            _, odds_a = find_book_at_line(lines_dict, candidate, side_a, book)
-            _, odds_b = find_book_at_line(lines_dict, candidate, side_b, book)
-            if odds_a is not None or odds_b is not None:
-                return candidate, odds_a, odds_b
-
-    best = (None, None, None, 999)
+    """
+    Find the book's main line:
+    1. Collect all lines offered by the book.
+    2. If consensus is known, filter to lines within 1.0 point of consensus.
+       If none within 1.0 point, search all available lines.
+    3. Among these candidate lines, pick the line whose side_a and side_b prices
+       are closest to even (-110 / -110). Lines with both sides posted are prioritized.
+    """
+    candidates = []
     for lv_str, sides in lines_dict.items():
-        odds_a = odds_b = None
+        try:
+            lv = float(lv_str)
+        except (ValueError, TypeError):
+            continue
+        odds_a = None
         for entry in sides.get(side_a, []):
             if entry[0] == book:
                 odds_a = entry[1]
                 break
+        odds_b = None
         for entry in sides.get(side_b, []):
             if entry[0] == book:
                 odds_b = entry[1]
                 break
-        if odds_a is not None and odds_b is not None:
-            vig = abs(abs(odds_a) - 110) + abs(abs(odds_b) - 110)
-            try:
-                lv = float(lv_str)
-            except:
-                continue
-            if vig < best[3]:
-                best = (lv, odds_a, odds_b, vig)
+        if odds_a is not None or odds_b is not None:
+            candidates.append((lv, odds_a, odds_b))
 
-    if best[0] is not None:
-        return best[0], best[1], best[2]
-    return None, None, None
+    if not candidates:
+        return None, None, None
+
+    pool = candidates
+    if consensus is not None:
+        near = [c for c in candidates if abs(c[0] - consensus) <= 1.0 + 1e-4]
+        if near:
+            pool = near
+
+    def score_line(c):
+        lv, a, b = c
+        if a is not None and b is not None:
+            diff = abs(abs(a) - 110) + abs(abs(b) - 110)
+            dist_cons = abs(lv - consensus) if consensus is not None else 0
+            return (0, diff, dist_cons)
+        else:
+            val = a if a is not None else b
+            dist_cons = abs(lv - consensus) if consensus is not None else 0
+            return (1, abs(abs(val) - 110), dist_cons)
+
+    best = min(pool, key=score_line)
+    return best[0], best[1], best[2]
 
 
 def process_game(game):
@@ -265,26 +279,53 @@ def save_snapshots(snapshots):
     print(f"[STORAGE] Saved {len(to_save)} new/changed snapshots ({skipped} duplicate/unchanged within 75m suppressed).")
 
 
+def write_status(success, error=None, games_count=0):
+    """Write run status to data/scraper_status.json for dashboard visibility."""
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        data = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "success": success,
+            "error": error,
+            "games_count": games_count,
+        }
+        with open(STATUS_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"[WARN] Failed to write status file: {e}")
+
+
 def main():
-    board = _req(BOARD_URL)
-    games = [g for g in board.get("games", []) if g.get("league") == "NFL"]
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{ts}] Processing {len(games)} NFL games for perpetual archive...")
+    # Mark in-progress/provisional status
+    write_status(False, error="Scrape in progress or interrupted", games_count=0)
+    try:
+        board = _req(BOARD_URL)
+        games = [g for g in board.get("games", []) if g.get("league") == "NFL"]
+        print(f"[{ts}] Processing {len(games)} NFL games for perpetual archive...")
 
-    snaps = []
-    for g in games:
-        try:
-            s = process_game(g)
-            snaps.append(s)
-        except Exception as ge:
-            print(f"[WARN] Error processing game {g.get('id')}: {ge}")
-        time.sleep(0.4)
+        snaps = []
+        for g in games:
+            try:
+                s = process_game(g)
+                snaps.append(s)
+            except Exception as ge:
+                print(f"[WARN] Error processing game {g.get('id')}: {ge}")
+            time.sleep(0.4)
 
-    if snaps:
-        save_snapshots(snaps)
-        print(f"[{ts}] Saved {len(snaps)} snapshots to active database and perpetual archive.")
-    else:
-        print(f"[{ts}] No snapshots collected.")
+        if snaps:
+            save_snapshots(snaps)
+            print(f"[{ts}] Saved {len(snaps)} snapshots to active database and perpetual archive.")
+            write_status(True, error=None, games_count=len(snaps))
+        else:
+            msg = "No games collected from board"
+            print(f"[{ts}] {msg}")
+            write_status(False, error=msg, games_count=0)
+            sys.exit(1)
+    except Exception as e:
+        print(f"[{ts}] [CRITICAL] Scraper failed: {e}")
+        write_status(False, error=str(e), games_count=0)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

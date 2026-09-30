@@ -59,7 +59,7 @@ jobs:
         run: |
           python -c "import sys; print('Python version:', sys.version)"
           python -c "import curl_cffi; print('curl_cffi version:', curl_cffi.__version__)"
-          python scrape_nfl_lines.py || echo "Scraper finished with non-zero or partial warnings"
+          python scrape_nfl_lines.py || echo "::warning::Scraper pull failed. Error recorded to dashboard status banner."
           python plot_nfl_lines.py
 
       - name: Commit snapshots and updated charts

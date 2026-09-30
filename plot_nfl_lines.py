@@ -38,7 +38,18 @@ except ImportError:
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, "data", "nfl_lines.jsonl")
+STATUS_FILE = os.path.join(BASE_DIR, "data", "scraper_status.json")
 CHART_DIR = os.path.join(BASE_DIR, "charts")
+
+
+def load_scraper_status():
+    if os.path.exists(STATUS_FILE):
+        try:
+            with open(STATUS_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return None
 
 # High-contrast luminous palette
 BG_PAGE = "#0d0e15"
@@ -428,16 +439,24 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
     now_ct_str = now_ct.strftime("%a %b %d, %Y %-I:%M %p %Z")
     total_snaps = sum(r["n_snaps"] for r in board_rows)
     all_reasons = load_reasons()
+    status_info = load_scraper_status()
 
-    # Staleness check: compare latest snapshot timestamp to current time
+    # Determine board ages:
+    # Base banner freshness on the OLDEST game's latest recorded line
+    # so a single updated game does not mask that 15 games are stale.
+    game_timestamps = [r["last_valid_ts"] for r in board_rows if r.get("last_valid_ts")]
+    oldest_ts = min(game_timestamps) if game_timestamps else latest_ts
+    newest_ts = max(game_timestamps) if game_timestamps else latest_ts
+
+    banner_ts = oldest_ts or latest_ts
     stale_hours = 0.0
     stale_mins = 0
     is_stale = False
     last_success_str = "Unknown"
     initial_age_str = "just now"
-    if latest_ts:
+    if banner_ts:
         try:
-            last_ct = parse_ts_ct(latest_ts)
+            last_ct = parse_ts_ct(banner_ts)
             diff = now_ct - last_ct
             sec = max(0, int(diff.total_seconds()))
             stale_mins = sec // 60
@@ -457,23 +476,44 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
     stale_games = [r for r in board_rows if r.get("is_stale_game")]
     stale_count = len(stale_games)
 
+    # Check if the most recent scraper pull failed
+    pull_failed = False
+    fail_desc = ""
+    if status_info and status_info.get("success") is False:
+        pull_failed = True
+        err = status_info.get("error") or "Unknown error"
+        if len(err) > 85:
+            err = err[:82] + "..."
+        ts_fail_str = "recent run"
+        if status_info.get("ts"):
+            try:
+                fct = parse_ts_ct(status_info["ts"])
+                ts_fail_str = fct.strftime("%-I:%M %p %Z")
+            except:
+                pass
+        fail_desc = f"Odds pull failed at {ts_fail_str} ({err}). Displaying prior board data (oldest line: {last_success_str}, {initial_age_str}). Check GitHub Actions run log for details."
+
     # Status Badge
-    if is_stale:
-        status_banner = f"""<div id='feed-banner' class='alert-banner stale' data-feed-ts='{latest_ts}'>
+    if pull_failed:
+        status_banner = f"""<div id='feed-banner' class='alert-banner warning' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
             <span class='alert-icon'>⚠️</span>
-            <b>SCRAPER STALE WARNING:</b> Last successful feed snapshot was <span id='feed-age-dynamic'>{initial_age_str}</span> (<span id='feed-time'>{last_success_str}</span>).
-            Check GitHub Actions run log for details.
+            <b>SCRAPER PULL FAILED:</b> {fail_desc}
+        </div>"""
+    elif is_stale:
+        status_banner = f"""<div id='feed-banner' class='alert-banner stale' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
+            <span class='alert-icon'>⚠️</span>
+            <b>SCRAPER STALE WARNING:</b> Oldest game line was captured <span id='feed-age-dynamic'>{initial_age_str}</span> (<span id='feed-time'>{last_success_str}</span>). Check GitHub Actions run log for details.
         </div>"""
     elif stale_count > 0:
         stale_names = ", ".join(f"{r['away']}@{r['home']}" for r in stale_games[:4])
-        status_banner = f"""<div id='feed-banner' class='alert-banner warning' data-feed-ts='{latest_ts}'>
+        status_banner = f"""<div id='feed-banner' class='alert-banner warning' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
             <span class='alert-icon'>⚠️</span>
-            <b>PARTIAL FEED DEGRADATION:</b> {stale_count} of {len(board_rows)} games ({stale_names}) failed to update in latest scrape and are showing prior lines. Last scrape batch: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
+            <b>PARTIAL FEED DEGRADATION:</b> {stale_count} of {len(board_rows)} games ({stale_names}) failed to update in latest scrape and are showing prior lines. Board age based on oldest line: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
         </div>"""
     else:
-        status_banner = f"""<div id='feed-banner' class='alert-banner healthy' data-feed-ts='{latest_ts}' data-feed-ts-label='{last_success_str}'>
+        status_banner = f"""<div id='feed-banner' class='alert-banner healthy' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
             <span class='status-dot'></span>
-            <b>Feed Healthy:</b> All {len(board_rows)} games active & updated. Last snapshot captured <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
+            <b>Feed Healthy:</b> All {len(board_rows)} games active & updated. Board age based on oldest line: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
         </div>"""
 
     table_rows = []
