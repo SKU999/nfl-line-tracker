@@ -1,91 +1,43 @@
-name: NFL Line Movement Tracker
+name: NFL Line Tracker Pages
 
 on:
   push:
     branches:
       - main
-  schedule:
-    # Base Cadence: Every 3 hours, 7 days a week (UTC-5: 00,03,06,09,12,15,18,21 CT -> 05,08,11,14,17,20,23,02 UTC)
-    # Minute 12 avoids top-of-hour GitHub Actions queuing bottlenecks
-    - cron: '12 2,5,8,11,14,17,20,23 * * *'
-    
-    # Sunday Kickoff Steam: 11:00 AM, 11:30 AM, 11:55 AM CT (16:00, 16:30, 16:55 UTC)
-    - cron: '0,30,55 16 * * 0'
-    
-    # Sunday 3:25 PM Late Window Steam: 3:00 PM, 3:20 PM CT (20:00, 20:20 UTC)
-    - cron: '0,20 20 * * 0'
-    
-    # Sunday Night Football Steam: 6:00 PM (23:00 UTC Sun) & 7:10 PM CT (00:10 UTC Mon)
-    - cron: '0 23 * * 0'
-    - cron: '10 0 * * 1'
-    
-    # Monday Night Football Steam: 7:10 PM CT (00:10 UTC Tue)
-    - cron: '10 0 * * 2'
-
-  # Manual on-demand trigger button in GitHub UI
+    paths:
+      - 'charts/**'
+      - '.github/workflows/nfl_tracker.yml'
   workflow_dispatch:
 
-# Permissions needed to commit snapshots and deploy to GitHub Pages
+# The odds provider blocks GitHub-hosted runners. The Mac runner owns scraping
+# and chart generation; this workflow only deploys the checked-in charts.
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
 concurrency:
-  group: "nfl-tracker"
+  group: "nfl-tracker-pages"
   cancel-in-progress: false
 
 jobs:
-  track_lines:
+  deploy_pages:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run Scraper & Chart Generator
-        run: |
-          python -c "import sys; print('Python version:', sys.version)"
-          python -c "import curl_cffi; print('curl_cffi version:', curl_cffi.__version__)"
-          python scrape_nfl_lines.py || (echo "::warning::Scraper pull failed on GitHub runner (likely datacenter 403 block). Discarding failed status to preserve Mac's clean board." && git checkout data/ && true)
-          python plot_nfl_lines.py
-
-      - name: Commit snapshots and updated charts
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/ charts/
-          if git diff --staged --quiet; then
-            echo "No line changes detected."
-          else
-            git commit -m "auto: NFL line snapshot & charts update [skip ci]" || true
-            git pull --rebase -X ours origin main || true
-            git push origin main || echo "Git push skipped on conflict"
-          fi
 
       - name: Setup Pages
-        if: always()
         uses: actions/configure-pages@v4
 
       - name: Upload Pages Artifact
-        if: always()
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'charts'
 
       - name: Deploy to GitHub Pages
-        if: always()
         id: deployment
         uses: actions/deploy-pages@v4

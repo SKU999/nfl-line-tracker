@@ -369,7 +369,12 @@ def build_board_rows(games_data, latest_ts=None):
         pin_sp = last.get("pin_spread")
         pin_tot = last.get("pin_total")
 
-        # Per-game staleness check relative to latest scrape run
+        # A missing DraftKings market in the latest scrape is a degradation
+        # immediately, even while the last valid line is recent.
+        latest_market_missing = (
+            latest_meta.get("dk_spread") is None or
+            latest_meta.get("dk_total") is None
+        )
         last_valid_ts = last.get("ts")
         is_stale_game = False
         last_valid_str = "Unknown"
@@ -420,6 +425,7 @@ def build_board_rows(games_data, latest_ts=None):
             "max_move": max(abs(sp_d), abs(t_d)),
             "is_thu": slate_code == "TNF",
             "is_stale_game": is_stale_game,
+            "latest_market_missing": latest_market_missing,
             "last_valid_str": last_valid_str,
             "last_valid_ts": last_valid_ts,
         })
@@ -484,6 +490,8 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         except:
             pass
 
+    missing_games = [r for r in board_rows if r.get("latest_market_missing")]
+    missing_count = len(missing_games)
     stale_games = [r for r in board_rows if r.get("is_stale_game")]
     stale_count = len(stale_games)
 
@@ -502,27 +510,27 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
                 ts_fail_str = fct.strftime("%-I:%M %p %Z")
             except:
                 pass
-        fail_desc = f"Odds pull failed at {ts_fail_str} ({err}). Displaying prior board data (oldest line: {last_success_str}, {initial_age_str}). Check GitHub Actions run log for details."
+        fail_desc = f"Odds pull was incomplete at {ts_fail_str} ({err}). Displaying the last verified line for affected games (oldest line: {last_success_str}, {initial_age_str}). Check the local runner log for details."
 
     # Status Badge
     if pull_failed:
-        status_banner = f"""<div id='feed-banner' class='alert-banner warning' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
+        status_banner = f"""<div id='feed-banner' class='alert-banner warning' data-banner-kind='failed' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
             <span class='alert-icon'>⚠️</span>
-            <b>SCRAPER PULL FAILED:</b> {fail_desc}
+            <b>SCRAPER DEGRADED:</b> {fail_desc}
         </div>"""
-    elif is_stale:
-        status_banner = f"""<div id='feed-banner' class='alert-banner stale' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
+    elif missing_count > 0:
+        missing_names = ", ".join(f"{r['away']}@{r['home']}" for r in missing_games[:4])
+        status_banner = f"""<div id='feed-banner' class='alert-banner warning' data-banner-kind='degraded' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
             <span class='alert-icon'>⚠️</span>
-            <b>SCRAPER STALE WARNING:</b> Oldest game line was captured <span id='feed-age-dynamic'>{initial_age_str}</span> (<span id='feed-time'>{last_success_str}</span>). Check GitHub Actions run log for details.
+            <b>PARTIAL FEED DEGRADATION:</b> {missing_count} of {len(board_rows)} games ({missing_names}) had no complete DraftKings market in the latest scrape and are showing prior lines. Board age based on oldest line: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
         </div>"""
-    elif stale_count > 0:
-        stale_names = ", ".join(f"{r['away']}@{r['home']}" for r in stale_games[:4])
-        status_banner = f"""<div id='feed-banner' class='alert-banner warning' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
+    elif is_stale or stale_count > 0:
+        status_banner = f"""<div id='feed-banner' class='alert-banner stale' data-banner-kind='stale' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
             <span class='alert-icon'>⚠️</span>
-            <b>PARTIAL FEED DEGRADATION:</b> {stale_count} of {len(board_rows)} games ({stale_names}) failed to update in latest scrape and are showing prior lines. Board age based on oldest line: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
+            <b>SCRAPER STALE WARNING:</b> Oldest game line was captured <span id='feed-age-dynamic'>{initial_age_str}</span> (<span id='feed-time'>{last_success_str}</span>). Check the local runner log for details.
         </div>"""
     else:
-        status_banner = f"""<div id='feed-banner' class='alert-banner healthy' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
+        status_banner = f"""<div id='feed-banner' class='alert-banner healthy' data-banner-kind='healthy' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
             <span class='status-dot'></span>
             <b>Feed Healthy:</b> All {len(board_rows)} games active & updated. Board age based on oldest line: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
         </div>"""
@@ -581,8 +589,8 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         reason_cell = f"<td class='reason' title='{reason_text}'>{reason_text}</td>" if reason_text else "<td class='reason-empty'>--</td>"
 
         lv_str = r["last_valid_str"]
-        if r["is_stale_game"]:
-            updated_cell = f"<td style='text-align:center;'><span class='pill-stale' title='Market failed on latest scraper run. Showing last verified line from {lv_str}.'>⚠️ {lv_str}</span></td>"
+        if r["latest_market_missing"] or r["is_stale_game"]:
+            updated_cell = f"<td style='text-align:center;'><span class='pill-stale' title='Market was missing or stale on the latest scraper run. Showing last verified line from {lv_str}.'>⚠️ {lv_str}</span></td>"
         else:
             updated_cell = f"<td style='text-align:center;'><span class='pill-fresh'>{lv_str}</span></td>"
 
@@ -789,8 +797,8 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
 <h1>NFL Line Movement — DraftKings</h1>
 <p class='sub'>
   DraftKings pinned &middot; Cross-checked with Pinnacle (* = 1+ pt divergence).<br>
-  Cadence: Every 3 hours, 24/7 (GitHub Actions) &middot; Sunday &amp; MNF rapid kickoff steam &middot; Baseline = tracker's earliest capture this week.<br>
-  Dashboard refreshed {now_ct_str} &middot; {total_snaps} snapshots recorded
+  Cadence: Local Mac every 3 hours, 24/7 &middot; Sunday &amp; MNF rapid kickoff steam &middot; Baseline = tracker's earliest capture this week.<br>
+  Page rendered {now_ct_str} &middot; {total_snaps} snapshots recorded
   <span class='legend-box'>
     <span class='dot-teal'>■ Away Implied Total</span>
     <span class='dot-amber'>● Home Implied Total</span>
@@ -853,7 +861,8 @@ function updateDynamicFeedAge() {{
   }}
   const isSunday = (now.getDay() === 0);
   const staleLimit = isSunday ? 1.5 : 4.0;
-  if (diffHours >= staleLimit) {{
+  const bannerKind = banner.getAttribute('data-banner-kind') || 'healthy';
+  if (diffHours >= staleLimit && bannerKind === 'healthy') {{
     if (!banner.classList.contains('stale')) {{
       banner.className = 'alert-banner stale';
     }}
