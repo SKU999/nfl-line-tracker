@@ -171,296 +171,1269 @@
     display: block;
   }
   .thu-card { opacity: 0.45; }
+
+  /* Dashboard shell and clearer hierarchy */
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(0, 229, 255, 0.07), transparent 34%),
+      radial-gradient(circle at 90% 8%, rgba(255, 179, 0, 0.06), transparent 30%),
+      #0d0e15;
+  }
+  .app-shell { max-width: 1880px; margin: 0 auto; }
+  .page-header { margin-bottom: 18px; }
+  .title-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .title-kicker { color: #00E5FF; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+  h1 { font-size: clamp(24px, 2.4vw, 36px); letter-spacing: -0.7px; }
+  .sub { color: #A3A9BE; font-size: 13px; margin: 8px 0 10px; }
+  .legend-box { margin-left: 0; margin-top: 8px; }
+  details.about { color: #979DB2; font-size: 12px; max-width: 880px; }
+  details.about summary { cursor: pointer; color: #C9CDDA; font-weight: 650; width: fit-content; }
+  details.about p { padding-top: 8px; line-height: 1.65; }
+
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    overflow-x: auto;
+    padding: 2px 0 14px;
+    scrollbar-width: thin;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-button {
+    appearance: none;
+    border: 1px solid #2A2E41;
+    background: #151722;
+    color: #AEB4C8;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: 140ms ease;
+  }
+  .filter-button:hover { border-color: #4B526D; color: #FFFFFF; }
+  .filter-button.active { background: rgba(0, 229, 255, 0.13); border-color: rgba(0, 229, 255, 0.55); color: #84F2FF; }
+
+  .desktop-board { display: block; }
+  .mobile-board { display: none; }
+  .table-wrap { overflow-x: auto; border: 1px solid #1F2332; border-radius: 12px; box-shadow: 0 16px 38px rgba(0,0,0,.22); }
+  .table-wrap table { min-width: 1220px; margin-bottom: 0; border-radius: 0; }
+  thead th { position: sticky; top: 0; z-index: 6; background: #151722; color: #959CB3; }
+  td { color: #A8AEC2; }
+  .game-row { cursor: pointer; transition: background 140ms ease, box-shadow 140ms ease; }
+  .game-row:hover td { background: #191C29; }
+  .game-row:focus-visible { outline: 2px solid #00E5FF; outline-offset: -2px; }
+  .game-row[aria-expanded='true'] td { background: #1B1E2C; border-bottom-color: transparent; }
+  .game-row[aria-expanded='true'] .chevron,
+  .mobile-game-summary[aria-expanded='true'] .chevron { transform: rotate(180deg); }
+  .view-chart { display: block; margin-top: 3px; color: #7FEFFF; font-size: 9px; font-weight: 750; letter-spacing: .3px; }
+  .chevron { display: inline-block; transition: transform 160ms ease; }
+  tr.thu td { opacity: 1; }
+  tr.thu .mu { border-left: 3px solid #7A8099; }
+  .movement-badge { display: inline-flex; min-width: 30px; justify-content: center; padding: 2px 6px; border-radius: 999px; background: #24283A; color: #BFC5D8; }
+  .movement-badge.significant { background: rgba(135, 111, 255, .18); color: #C8BBFF; border: 1px solid rgba(135, 111, 255, .4); }
+
+  .chart-detail-row td { padding: 0; background: #10121B; }
+  .chart-detail-shell { padding: 22px; border-top: 1px solid rgba(0,229,255,.28); border-bottom: 1px solid #252A3C; }
+  .chart-detail-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 14px; }
+  .chart-detail-heading h2 { color: #F6F7FB; font-size: 20px; }
+  .eyebrow { color: #7E859D; font-size: 9px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+  .pull-note { color: #AAB0C3; font-size: 11px; }
+  .pull-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #00E5FF; box-shadow: 0 0 8px rgba(0,229,255,.75); margin-right: 5px; }
+  .detail-stats { display: grid; grid-template-columns: repeat(8, minmax(105px, 1fr)); gap: 8px; margin-bottom: 14px; }
+  .detail-stats > div { background: #181B28; border: 1px solid #24283A; border-radius: 8px; padding: 9px 10px; }
+  .detail-stats span { display: block; color: #7F869E; font-size: 9px; text-transform: uppercase; letter-spacing: .5px; }
+  .detail-stats strong { display: block; color: #F0F2F8; font-size: 12px; margin-top: 3px; }
+  .expanded-chart { display: block; width: min(1180px, 100%); height: auto; margin: 0 auto; border-radius: 10px; border: 1px solid #24283A; background: #151722; }
+  .movement-note { color: #B4BACD; font-size: 12px; text-align: center; padding-top: 10px; }
+  .chart-unavailable { color: #8A90A6; padding: 30px; text-align: center; }
+
+  @media (max-width: 900px) {
+    body { padding: 14px; }
+    .filter-bar { scrollbar-width: none; }
+    .desktop-board { display: none; }
+    .mobile-board { display: grid; gap: 10px; }
+    .title-row { align-items: flex-start; }
+    .alert-banner { display: block; line-height: 1.55; }
+    .alert-banner .status-dot, .alert-banner .alert-icon { margin-right: 6px; }
+    .mobile-game-card { background: #141620; border: 1px solid #24283A; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+    .mobile-game-card.thu { border-left: 3px solid #7A8099; }
+    .mobile-game-summary { width: 100%; display: flex; justify-content: space-between; gap: 14px; align-items: center; padding: 14px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+    .mobile-game-main { display: grid; gap: 3px; min-width: 0; }
+    .mobile-game-main strong { color: #F3F5FA; font-size: 16px; }
+    .mobile-game-main > span:last-child { color: #9DA4B9; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+    .mobile-slate { color: #737B95; font-size: 8px; font-weight: 800; letter-spacing: .9px; text-transform: uppercase; }
+    .mobile-current { display: grid; gap: 3px; justify-items: end; flex: 0 0 auto; }
+    .mobile-current strong { color: #E8EBF4; font-size: 12px; }
+    .mobile-current .chevron { color: #00E5FF; font-size: 16px; }
+    .mobile-detail { border-top: 1px solid #262B3E; padding: 12px; background: #10121B; }
+    .detail-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .expanded-chart { width: 100%; }
+    .mobile-detail .pull-note { display: block; padding: 10px 2px 2px; text-align: center; }
+    .legend-box { display: flex; flex-wrap: wrap; gap: 10px; }
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 11px; }
+    h1 { font-size: 25px; line-height: 1.08; }
+    .sub { font-size: 12px; }
+    .alert-banner { font-size: 11.5px; padding: 10px 12px; }
+    .filter-bar { margin-right: -11px; padding-right: 11px; }
+    .mobile-game-main > span:last-child { max-width: 190px; }
+  }
 </style>
 </head>
 <body>
-<h1>NFL Line Movement — DraftKings</h1>
-<p class='sub'>
-  DraftKings pinned &middot; Cross-checked with Pinnacle (* = 1+ pt divergence).<br>
-  Cadence: Local Mac every 3 hours, 24/7 &middot; Sunday &amp; MNF rapid kickoff steam &middot; Baseline = tracker's earliest capture this week.<br>
-  Page rendered Thu Oct 01, 2026 8:44 AM CDT &middot; 350 snapshots recorded
-  <span class='legend-box'>
-    <span class='dot-teal'>■ Away Implied Total</span>
-    <span class='dot-amber'>● Home Implied Total</span>
-  </span>
-</p>
+<main class='app-shell'>
+  <header class='page-header'>
+    <div class='title-row'>
+      <div>
+        <span class='title-kicker'>Live market board</span>
+        <h1>NFL Line Movement</h1>
+      </div>
+    </div>
+    <p class='sub'>
+      DraftKings main lines &middot; Pinnacle cross-check &middot; Updated by the local Mac tracker<br>
+      Page rendered Thu Oct 01, 2026 9:06 AM CDT &middot; 240 valid chart dots &middot; 366 total pull attempts
+      <span class='legend-box'>
+        <span class='dot-teal'>● Away implied total</span>
+        <span class='dot-amber'>● Home implied total</span>
+        <span><span class='pull-dot'></span>Every dot = one valid completed pull</span>
+      </span>
+    </p>
+    <details class='about'>
+      <summary>About this tracker</summary>
+      <p>Lines are pinned to DraftKings and checked against Pinnacle. An asterisk marks a 1+ point divergence. The baseline is the earliest capture retained for the active week. Normal cadence is every three hours, with faster Sunday and Monday-night kickoff coverage.</p>
+    </details>
+  </header>
 
-<div id='feed-banner' class='alert-banner healthy' data-banner-kind='healthy' data-feed-ts='2026-10-01T13:44:15.646888+00:00' data-feed-ts-label='Thu Oct 01, 8:44 AM CDT'>
+  <div id='feed-banner' class='alert-banner healthy' data-banner-kind='healthy' data-feed-ts='2026-10-01T14:00:00.699518+00:00' data-feed-ts-label='Thu Oct 01, 9:00 AM CDT'>
             <span class='status-dot'></span>
-            <b>Feed Healthy:</b> All 16 games active & updated. Board age based on oldest line: <span id='feed-time'>Thu Oct 01, 8:44 AM CDT</span> (<span id='feed-age-dynamic'>just now</span>).
+            <b>Feed Healthy:</b> All 16 games active & updated. Board age based on oldest line: <span id='feed-time'>Thu Oct 01, 9:00 AM CDT</span> (<span id='feed-age-dynamic'>6m ago</span>).
         </div>
 
-<table>
-<thead>
-<tr>
-  <th>Matchup</th>
-  <th title="Earliest capture recorded by tracker this week">Tracker Baseline Spread</th>
-  <th>Current Spread</th>
-  <th>Δ SP</th>
-  <th title="Earliest total recorded by tracker this week">Tracker Baseline Total</th>
-  <th>Current Total</th>
-  <th>Δ Tot</th>
-  <th>Away IT (Teal)</th>
-  <th>Home IT (Amber)</th>
-  <th>Movement Context / Reason</th>
-  <th style="text-align: center;" title="Timestamp of latest recorded line snapshot (unchanged lines within 75m are deduplicated)">Last Recorded</th>
-  <th style="text-align: center;">Snaps</th>
-</tr>
-</thead>
-<tbody>
-<tr class='slate-sep-row' data-slate='TNF'>
+  <nav class='filter-bar' aria-label='Filter games by slate'>
+    <button class='filter-button active' type='button' data-filter='ALL'>All games</button>
+    <button class='filter-button' type='button' data-filter='TNF'>TNF</button>
+    <button class='filter-button' type='button' data-filter='OTHER_PRIMETIME'>Special</button>
+    <button class='filter-button' type='button' data-filter='SUN_EARLY'>Sunday early</button>
+    <button class='filter-button' type='button' data-filter='SUN_LATE'>Sunday late</button>
+    <button class='filter-button' type='button' data-filter='SNF'>SNF</button>
+    <button class='filter-button' type='button' data-filter='MNF'>MNF</button>
+  </nav>
+
+  <section class='desktop-board' aria-label='NFL line movement table'>
+    <div class='table-wrap'>
+      <table>
+      <thead>
+      <tr>
+        <th>Matchup</th>
+        <th title="Earliest spread captured this week">Opening</th>
+        <th>Current</th>
+        <th>Move</th>
+        <th title="Earliest total captured this week">Opening O/U</th>
+        <th>Current O/U</th>
+        <th>Move</th>
+        <th>Away IT</th>
+        <th>Home IT</th>
+        <th>Movement</th>
+        <th style="text-align: center;" title="Timestamp of the latest completed pull">Last pull</th>
+        <th style="text-align: center;">Chart dots</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr class='slate-sep-row' data-slate='TNF'>
                 <td colspan='12' class='slate-sep-cell'>
                     <span class='sep-dash'>────</span>
                     <span class='sep-label'>THURSDAY NIGHT FOOTBALL</span>
                     <span class='sep-dash'>────</span>
                 </td>
-            </tr><tr class='thu' data-slate='TNF'>
-            <td class='mu'><span class='tag'>THU</span> PIT @ <b>CLE</b></td>
+            </tr><tr class='game-row thu' data-slate='TNF' data-game='PIT_CLE' data-toggle-game='PIT_CLE' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-PIT_CLE'>
+            <td class='mu'><span class='tag'>THU</span> PIT @ <b>CLE</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>PIT -2.5</td>
             <td><b>PIT -3.5</b></td>
-            <td class='delta'>1.0</td>
+            <td class='delta'><span class='movement-badge significant'>1.0</span></td>
             <td>38.5</td>
-            <td><b>39.5</b> <span class='div' title='Pinnacle divergence ≥ 1 pt'>*</span></td>
-            <td class='delta'>1.0</td>
-            <td class='it-away'>PIT 21.5</td>
-            <td class='it-home'>CLE 18.0</td>
-            <td class='reason' title='Spread PIT -2.5 → -3.5; Total 38.5 → 39.5'>Spread PIT -2.5 → -3.5; Total 38.5 → 39.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>37</td>
+            <td><b>38.5</b></td>
+            <td class='flat'>--</td>
+            <td class='it-away'>PIT 21.0</td>
+            <td class='it-home'>CLE 17.5</td>
+            <td class='reason' title='Spread PIT -2.5 → -3.5'>Spread PIT -2.5 → -3.5</td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>16</td>
+        </tr>
+        <tr id='desktop-panel-PIT_CLE' class='chart-detail-row' data-slate='TNF' data-game-panel='PIT_CLE' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>THURSDAY NIGHT FOOTBALL</span><h2>PIT @ CLE</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>PIT -2.5</strong></div>
+                <div><span>Current spread</span><strong>PIT -3.5</strong></div>
+                <div><span>Opening total</span><strong>38.5</strong></div>
+                <div><span>Current total</span><strong>38.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>PIT 21.0</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>CLE 17.5</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>16</strong></div>
+            </div>
+                    <img class='expanded-chart' src='PIT_CLE.png?v=1790863569' alt='PIT at CLE line movement chart'>
+                    <p class='movement-note'>Spread PIT -2.5 → -3.5</p>
+                </div>
+            </td>
         </tr><tr class='slate-sep-row' data-slate='OTHER_PRIMETIME'>
                 <td colspan='12' class='slate-sep-cell'>
                     <span class='sep-dash'>────</span>
                     <span class='sep-label'>OTHER / SPECIAL PRIMETIME</span>
                     <span class='sep-dash'>────</span>
                 </td>
-            </tr><tr class='' data-slate='OTHER_PRIMETIME'>
-            <td class='mu'>IND @ <b>WAS</b></td>
+            </tr><tr class='game-row ' data-slate='OTHER_PRIMETIME' data-game='IND_WAS' data-toggle-game='IND_WAS' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-IND_WAS'>
+            <td class='mu'>IND @ <b>WAS</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>IND -3.5</td>
             <td><b>IND -3.5</b></td>
             <td class='flat'>--</td>
             <td>46.5</td>
             <td><b>47.5</b></td>
-            <td class='delta'>1.0</td>
+            <td class='delta'><span class='movement-badge'>1.0</span></td>
             <td class='it-away'>IND 25.5</td>
             <td class='it-home'>WAS 22.0</td>
             <td class='reason' title='Total 46.5 → 47.5'>Total 46.5 → 47.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>22</td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>19</td>
+        </tr>
+        <tr id='desktop-panel-IND_WAS' class='chart-detail-row' data-slate='OTHER_PRIMETIME' data-game-panel='IND_WAS' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>OTHER / SPECIAL PRIMETIME</span><h2>IND @ WAS</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>IND -3.5</strong></div>
+                <div><span>Current spread</span><strong>IND -3.5</strong></div>
+                <div><span>Opening total</span><strong>46.5</strong></div>
+                <div><span>Current total</span><strong>47.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>IND 25.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>WAS 22.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>19</strong></div>
+            </div>
+                    <img class='expanded-chart' src='IND_WAS.png?v=1790863569' alt='IND at WAS line movement chart'>
+                    <p class='movement-note'>Total 46.5 → 47.5</p>
+                </div>
+            </td>
         </tr><tr class='slate-sep-row' data-slate='SUN_EARLY'>
                 <td colspan='12' class='slate-sep-cell'>
                     <span class='sep-dash'>────</span>
                     <span class='sep-label'>SUNDAY MAIN SLATE — EARLY</span>
                     <span class='sep-dash'>────</span>
                 </td>
-            </tr><tr class='' data-slate='SUN_EARLY'>
-            <td class='mu'>ARI @ <b>NYG</b></td>
+            </tr><tr class='game-row ' data-slate='SUN_EARLY' data-game='ARI_NYG' data-toggle-game='ARI_NYG' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-ARI_NYG'>
+            <td class='mu'>ARI @ <b>NYG</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>NYG -1.5</td>
             <td><b>ARI -2.5</b></td>
-            <td class='delta'>4.0</td>
+            <td class='delta'><span class='movement-badge significant'>4.0</span></td>
             <td>43.5</td>
             <td><b>44.5</b></td>
-            <td class='delta'>1.0</td>
+            <td class='delta'><span class='movement-badge'>1.0</span></td>
             <td class='it-away'>ARI 23.5</td>
             <td class='it-home'>NYG 21.0</td>
             <td class='reason' title='Spread ARI +1.5 → -2.5; Total 43.5 → 44.5'>Spread ARI +1.5 → -2.5; Total 43.5 → 44.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>21</td>
-        </tr><tr class='' data-slate='SUN_EARLY'>
-            <td class='mu'>GB @ <b>TB</b></td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>17</td>
+        </tr>
+        <tr id='desktop-panel-ARI_NYG' class='chart-detail-row' data-slate='SUN_EARLY' data-game-panel='ARI_NYG' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY MAIN SLATE — EARLY</span><h2>ARI @ NYG</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>NYG -1.5</strong></div>
+                <div><span>Current spread</span><strong>ARI -2.5</strong></div>
+                <div><span>Opening total</span><strong>43.5</strong></div>
+                <div><span>Current total</span><strong>44.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>ARI 23.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>NYG 21.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>17</strong></div>
+            </div>
+                    <img class='expanded-chart' src='ARI_NYG.png?v=1790863569' alt='ARI at NYG line movement chart'>
+                    <p class='movement-note'>Spread ARI +1.5 → -2.5; Total 43.5 → 44.5</p>
+                </div>
+            </td>
+        </tr><tr class='game-row ' data-slate='SUN_EARLY' data-game='GB_TB' data-toggle-game='GB_TB' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-GB_TB'>
+            <td class='mu'>GB @ <b>TB</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>GB -3.0</td>
             <td><b>GB -3.5</b></td>
-            <td class='delta'>0.5</td>
+            <td class='delta'><span class='movement-badge'>0.5</span></td>
             <td>42.5</td>
             <td><b>38.5</b></td>
-            <td class='delta'>4.0</td>
+            <td class='delta'><span class='movement-badge significant'>4.0</span></td>
             <td class='it-away'>GB 21.0</td>
             <td class='it-home'>TB 17.5</td>
             <td class='reason' title='Spread GB -3.0 → -3.5; Total 42.5 → 38.5'>Spread GB -3.0 → -3.5; Total 42.5 → 38.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>21</td>
-        </tr><tr class='' data-slate='SUN_EARLY'>
-            <td class='mu'>LAR @ <b>PHI</b></td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>17</td>
+        </tr>
+        <tr id='desktop-panel-GB_TB' class='chart-detail-row' data-slate='SUN_EARLY' data-game-panel='GB_TB' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY MAIN SLATE — EARLY</span><h2>GB @ TB</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>GB -3.0</strong></div>
+                <div><span>Current spread</span><strong>GB -3.5</strong></div>
+                <div><span>Opening total</span><strong>42.5</strong></div>
+                <div><span>Current total</span><strong>38.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>GB 21.0</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>TB 17.5</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>17</strong></div>
+            </div>
+                    <img class='expanded-chart' src='GB_TB.png?v=1790863569' alt='GB at TB line movement chart'>
+                    <p class='movement-note'>Spread GB -3.0 → -3.5; Total 42.5 → 38.5</p>
+                </div>
+            </td>
+        </tr><tr class='game-row ' data-slate='SUN_EARLY' data-game='LAR_PHI' data-toggle-game='LAR_PHI' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-LAR_PHI'>
+            <td class='mu'>LAR @ <b>PHI</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>LAR -2.5</td>
             <td><b>LAR -3.0</b></td>
-            <td class='delta'>0.5</td>
+            <td class='delta'><span class='movement-badge'>0.5</span></td>
             <td>46.5</td>
             <td><b>43.5</b></td>
-            <td class='delta'>3.0</td>
+            <td class='delta'><span class='movement-badge significant'>3.0</span></td>
             <td class='it-away'>LAR 23.2</td>
             <td class='it-home'>PHI 20.2</td>
             <td class='reason' title='Spread LAR -2.5 → -3.0; Total 46.5 → 43.5'>Spread LAR -2.5 → -3.0; Total 46.5 → 43.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>21</td>
-        </tr><tr class='' data-slate='SUN_EARLY'>
-            <td class='mu'>DAL @ <b>HOU</b></td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>15</td>
+        </tr>
+        <tr id='desktop-panel-LAR_PHI' class='chart-detail-row' data-slate='SUN_EARLY' data-game-panel='LAR_PHI' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY MAIN SLATE — EARLY</span><h2>LAR @ PHI</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>LAR -2.5</strong></div>
+                <div><span>Current spread</span><strong>LAR -3.0</strong></div>
+                <div><span>Opening total</span><strong>46.5</strong></div>
+                <div><span>Current total</span><strong>43.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>LAR 23.2</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>PHI 20.2</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>15</strong></div>
+            </div>
+                    <img class='expanded-chart' src='LAR_PHI.png?v=1790863569' alt='LAR at PHI line movement chart'>
+                    <p class='movement-note'>Spread LAR -2.5 → -3.0; Total 46.5 → 43.5</p>
+                </div>
+            </td>
+        </tr><tr class='game-row ' data-slate='SUN_EARLY' data-game='DAL_HOU' data-toggle-game='DAL_HOU' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-DAL_HOU'>
+            <td class='mu'>DAL @ <b>HOU</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>HOU -2.5</td>
             <td><b>HOU -3.0</b></td>
-            <td class='delta'>0.5</td>
+            <td class='delta'><span class='movement-badge'>0.5</span></td>
             <td>47.5</td>
             <td><b>48.5</b></td>
-            <td class='delta'>1.0</td>
+            <td class='delta'><span class='movement-badge'>1.0</span></td>
             <td class='it-away'>DAL 22.8</td>
             <td class='it-home'>HOU 25.8</td>
             <td class='reason' title='Spread HOU -2.5 → -3.0; Total 47.5 → 48.5'>Spread HOU -2.5 → -3.0; Total 47.5 → 48.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>21</td>
-        </tr><tr class='' data-slate='SUN_EARLY'>
-            <td class='mu'>JAX @ <b>CIN</b></td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>17</td>
+        </tr>
+        <tr id='desktop-panel-DAL_HOU' class='chart-detail-row' data-slate='SUN_EARLY' data-game-panel='DAL_HOU' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY MAIN SLATE — EARLY</span><h2>DAL @ HOU</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>HOU -2.5</strong></div>
+                <div><span>Current spread</span><strong>HOU -3.0</strong></div>
+                <div><span>Opening total</span><strong>47.5</strong></div>
+                <div><span>Current total</span><strong>48.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>DAL 22.8</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>HOU 25.8</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>17</strong></div>
+            </div>
+                    <img class='expanded-chart' src='DAL_HOU.png?v=1790863569' alt='DAL at HOU line movement chart'>
+                    <p class='movement-note'>Spread HOU -2.5 → -3.0; Total 47.5 → 48.5</p>
+                </div>
+            </td>
+        </tr><tr class='game-row ' data-slate='SUN_EARLY' data-game='JAX_CIN' data-toggle-game='JAX_CIN' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-JAX_CIN'>
+            <td class='mu'>JAX @ <b>CIN</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>CIN -2.5</td>
             <td><b>CIN -2.5</b></td>
             <td class='flat'>--</td>
             <td>50.5</td>
             <td><b>51.5</b></td>
-            <td class='delta'>1.0</td>
+            <td class='delta'><span class='movement-badge'>1.0</span></td>
             <td class='it-away'>JAX 24.5</td>
             <td class='it-home'>CIN 27.0</td>
             <td class='reason' title='Total 50.5 → 51.5'>Total 50.5 → 51.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>21</td>
-        </tr><tr class='' data-slate='SUN_EARLY'>
-            <td class='mu'>TEN @ <b>BAL</b></td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>17</td>
+        </tr>
+        <tr id='desktop-panel-JAX_CIN' class='chart-detail-row' data-slate='SUN_EARLY' data-game-panel='JAX_CIN' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY MAIN SLATE — EARLY</span><h2>JAX @ CIN</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>CIN -2.5</strong></div>
+                <div><span>Current spread</span><strong>CIN -2.5</strong></div>
+                <div><span>Opening total</span><strong>50.5</strong></div>
+                <div><span>Current total</span><strong>51.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>JAX 24.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>CIN 27.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>17</strong></div>
+            </div>
+                    <img class='expanded-chart' src='JAX_CIN.png?v=1790863569' alt='JAX at CIN line movement chart'>
+                    <p class='movement-note'>Total 50.5 → 51.5</p>
+                </div>
+            </td>
+        </tr><tr class='game-row ' data-slate='SUN_EARLY' data-game='TEN_BAL' data-toggle-game='TEN_BAL' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-TEN_BAL'>
+            <td class='mu'>TEN @ <b>BAL</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>BAL -11.5</td>
             <td><b>BAL -11.5</b></td>
             <td class='flat'>--</td>
             <td>43.5</td>
             <td><b>42.5</b></td>
-            <td class='delta'>1.0</td>
+            <td class='delta'><span class='movement-badge'>1.0</span></td>
             <td class='it-away'>TEN 15.5</td>
             <td class='it-home'>BAL 27.0</td>
             <td class='reason' title='Total 43.5 → 42.5'>Total 43.5 → 42.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>21</td>
-        </tr><tr class='' data-slate='SUN_EARLY'>
-            <td class='mu'>NE @ <b>BUF</b></td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>15</td>
+        </tr>
+        <tr id='desktop-panel-TEN_BAL' class='chart-detail-row' data-slate='SUN_EARLY' data-game-panel='TEN_BAL' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY MAIN SLATE — EARLY</span><h2>TEN @ BAL</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>BAL -11.5</strong></div>
+                <div><span>Current spread</span><strong>BAL -11.5</strong></div>
+                <div><span>Opening total</span><strong>43.5</strong></div>
+                <div><span>Current total</span><strong>42.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>TEN 15.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>BAL 27.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>15</strong></div>
+            </div>
+                    <img class='expanded-chart' src='TEN_BAL.png?v=1790863569' alt='TEN at BAL line movement chart'>
+                    <p class='movement-note'>Total 43.5 → 42.5</p>
+                </div>
+            </td>
+        </tr><tr class='game-row ' data-slate='SUN_EARLY' data-game='NE_BUF' data-toggle-game='NE_BUF' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-NE_BUF'>
+            <td class='mu'>NE @ <b>BUF</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>BUF -7.0</td>
             <td><b>BUF -6.5</b></td>
-            <td class='delta'>0.5</td>
+            <td class='delta'><span class='movement-badge'>0.5</span></td>
             <td>48.5</td>
             <td><b>48.5</b></td>
             <td class='flat'>--</td>
             <td class='it-away'>NE 21.0</td>
             <td class='it-home'>BUF 27.5</td>
             <td class='reason' title='Spread BUF -7.0 → -6.5'>Spread BUF -7.0 → -6.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>21</td>
-        </tr><tr class='' data-slate='SUN_EARLY'>
-            <td class='mu'>NYJ @ <b>CHI</b></td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>18</td>
+        </tr>
+        <tr id='desktop-panel-NE_BUF' class='chart-detail-row' data-slate='SUN_EARLY' data-game-panel='NE_BUF' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY MAIN SLATE — EARLY</span><h2>NE @ BUF</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>BUF -7.0</strong></div>
+                <div><span>Current spread</span><strong>BUF -6.5</strong></div>
+                <div><span>Opening total</span><strong>48.5</strong></div>
+                <div><span>Current total</span><strong>48.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>NE 21.0</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>BUF 27.5</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>18</strong></div>
+            </div>
+                    <img class='expanded-chart' src='NE_BUF.png?v=1790863569' alt='NE at BUF line movement chart'>
+                    <p class='movement-note'>Spread BUF -7.0 → -6.5</p>
+                </div>
+            </td>
+        </tr><tr class='game-row ' data-slate='SUN_EARLY' data-game='NYJ_CHI' data-toggle-game='NYJ_CHI' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-NYJ_CHI'>
+            <td class='mu'>NYJ @ <b>CHI</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>CHI -3.0</td>
             <td><b>CHI -3.5</b></td>
-            <td class='delta'>0.5</td>
+            <td class='delta'><span class='movement-badge'>0.5</span></td>
             <td>42.5</td>
             <td><b>42.5</b></td>
             <td class='flat'>--</td>
             <td class='it-away'>NYJ 19.5</td>
             <td class='it-home'>CHI 23.0</td>
             <td class='reason' title='Spread CHI -3.0 → -3.5'>Spread CHI -3.0 → -3.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>21</td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>17</td>
+        </tr>
+        <tr id='desktop-panel-NYJ_CHI' class='chart-detail-row' data-slate='SUN_EARLY' data-game-panel='NYJ_CHI' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY MAIN SLATE — EARLY</span><h2>NYJ @ CHI</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>CHI -3.0</strong></div>
+                <div><span>Current spread</span><strong>CHI -3.5</strong></div>
+                <div><span>Opening total</span><strong>42.5</strong></div>
+                <div><span>Current total</span><strong>42.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>NYJ 19.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>CHI 23.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>17</strong></div>
+            </div>
+                    <img class='expanded-chart' src='NYJ_CHI.png?v=1790863569' alt='NYJ at CHI line movement chart'>
+                    <p class='movement-note'>Spread CHI -3.0 → -3.5</p>
+                </div>
+            </td>
         </tr><tr class='slate-sep-row' data-slate='SUN_LATE'>
                 <td colspan='12' class='slate-sep-cell'>
                     <span class='sep-dash'>────</span>
                     <span class='sep-label'>SUNDAY MAIN SLATE — LATE</span>
                     <span class='sep-dash'>────</span>
                 </td>
-            </tr><tr class='' data-slate='SUN_LATE'>
-            <td class='mu'>MIA @ <b>MIN</b></td>
+            </tr><tr class='game-row ' data-slate='SUN_LATE' data-game='MIA_MIN' data-toggle-game='MIA_MIN' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-MIA_MIN'>
+            <td class='mu'>MIA @ <b>MIN</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>MIN -10.0</td>
             <td><b>MIN -10.5</b></td>
-            <td class='delta'>0.5</td>
+            <td class='delta'><span class='movement-badge'>0.5</span></td>
             <td>39.5</td>
             <td><b>38.5</b></td>
-            <td class='delta'>1.0</td>
+            <td class='delta'><span class='movement-badge'>1.0</span></td>
             <td class='it-away'>MIA 14.0</td>
             <td class='it-home'>MIN 24.5</td>
             <td class='reason' title='Spread MIN -10.0 → -10.5; Total 39.5 → 38.5'>Spread MIN -10.0 → -10.5; Total 39.5 → 38.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>21</td>
-        </tr><tr class='' data-slate='SUN_LATE'>
-            <td class='mu'>DEN @ <b>SF</b></td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>14</td>
+        </tr>
+        <tr id='desktop-panel-MIA_MIN' class='chart-detail-row' data-slate='SUN_LATE' data-game-panel='MIA_MIN' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY MAIN SLATE — LATE</span><h2>MIA @ MIN</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>MIN -10.0</strong></div>
+                <div><span>Current spread</span><strong>MIN -10.5</strong></div>
+                <div><span>Opening total</span><strong>39.5</strong></div>
+                <div><span>Current total</span><strong>38.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>MIA 14.0</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>MIN 24.5</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>14</strong></div>
+            </div>
+                    <img class='expanded-chart' src='MIA_MIN.png?v=1790863569' alt='MIA at MIN line movement chart'>
+                    <p class='movement-note'>Spread MIN -10.0 → -10.5; Total 39.5 → 38.5</p>
+                </div>
+            </td>
+        </tr><tr class='game-row ' data-slate='SUN_LATE' data-game='DEN_SF' data-toggle-game='DEN_SF' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-DEN_SF'>
+            <td class='mu'>DEN @ <b>SF</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>SF -3.0</td>
             <td><b>SF -3.0</b></td>
             <td class='flat'>--</td>
             <td>46.5</td>
             <td><b>47.5</b> <span class='div' title='Pinnacle divergence ≥ 1 pt'>*</span></td>
-            <td class='delta'>1.0</td>
+            <td class='delta'><span class='movement-badge'>1.0</span></td>
             <td class='it-away'>DEN 22.2</td>
             <td class='it-home'>SF 25.2</td>
             <td class='reason' title='Total 46.5 → 47.5'>Total 46.5 → 47.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>22</td>
-        </tr><tr class='' data-slate='SUN_LATE'>
-            <td class='mu'>KC @ <b>LVR</b></td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>14</td>
+        </tr>
+        <tr id='desktop-panel-DEN_SF' class='chart-detail-row' data-slate='SUN_LATE' data-game-panel='DEN_SF' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY MAIN SLATE — LATE</span><h2>DEN @ SF</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>SF -3.0</strong></div>
+                <div><span>Current spread</span><strong>SF -3.0</strong></div>
+                <div><span>Opening total</span><strong>46.5</strong></div>
+                <div><span>Current total</span><strong>47.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>DEN 22.2</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>SF 25.2</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>14</strong></div>
+            </div>
+                    <img class='expanded-chart' src='DEN_SF.png?v=1790863569' alt='DEN at SF line movement chart'>
+                    <p class='movement-note'>Total 46.5 → 47.5</p>
+                </div>
+            </td>
+        </tr><tr class='game-row ' data-slate='SUN_LATE' data-game='KC_LVR' data-toggle-game='KC_LVR' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-KC_LVR'>
+            <td class='mu'>KC @ <b>LVR</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>KC -5.5</td>
             <td><b>KC -4.5</b></td>
-            <td class='delta'>1.0</td>
+            <td class='delta'><span class='movement-badge significant'>1.0</span></td>
             <td>47.5</td>
             <td><b>47.5</b></td>
             <td class='flat'>--</td>
             <td class='it-away'>KC 26.0</td>
             <td class='it-home'>LVR 21.5</td>
             <td class='reason' title='Spread KC -5.5 → -4.5'>Spread KC -5.5 → -4.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>21</td>
-        </tr><tr class='' data-slate='SUN_LATE'>
-            <td class='mu'>LAC @ <b>SEA</b></td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>11</td>
+        </tr>
+        <tr id='desktop-panel-KC_LVR' class='chart-detail-row' data-slate='SUN_LATE' data-game-panel='KC_LVR' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY MAIN SLATE — LATE</span><h2>KC @ LVR</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>KC -5.5</strong></div>
+                <div><span>Current spread</span><strong>KC -4.5</strong></div>
+                <div><span>Opening total</span><strong>47.5</strong></div>
+                <div><span>Current total</span><strong>47.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>KC 26.0</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>LVR 21.5</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>11</strong></div>
+            </div>
+                    <img class='expanded-chart' src='KC_LVR.png?v=1790863569' alt='KC at LVR line movement chart'>
+                    <p class='movement-note'>Spread KC -5.5 → -4.5</p>
+                </div>
+            </td>
+        </tr><tr class='game-row ' data-slate='SUN_LATE' data-game='LAC_SEA' data-toggle-game='LAC_SEA' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-LAC_SEA'>
+            <td class='mu'>LAC @ <b>SEA</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>SEA -6.5</td>
             <td><b>SEA -7.0</b></td>
-            <td class='delta'>0.5</td>
+            <td class='delta'><span class='movement-badge'>0.5</span></td>
             <td>43.5</td>
             <td><b>42.5</b></td>
-            <td class='delta'>1.0</td>
+            <td class='delta'><span class='movement-badge'>1.0</span></td>
             <td class='it-away'>LAC 17.8</td>
             <td class='it-home'>SEA 24.8</td>
             <td class='reason' title='Spread SEA -6.5 → -7.0; Total 43.5 → 42.5'>Spread SEA -6.5 → -7.0; Total 43.5 → 42.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>21</td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>11</td>
+        </tr>
+        <tr id='desktop-panel-LAC_SEA' class='chart-detail-row' data-slate='SUN_LATE' data-game-panel='LAC_SEA' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY MAIN SLATE — LATE</span><h2>LAC @ SEA</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>SEA -6.5</strong></div>
+                <div><span>Current spread</span><strong>SEA -7.0</strong></div>
+                <div><span>Opening total</span><strong>43.5</strong></div>
+                <div><span>Current total</span><strong>42.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>LAC 17.8</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>SEA 24.8</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>11</strong></div>
+            </div>
+                    <img class='expanded-chart' src='LAC_SEA.png?v=1790863569' alt='LAC at SEA line movement chart'>
+                    <p class='movement-note'>Spread SEA -6.5 → -7.0; Total 43.5 → 42.5</p>
+                </div>
+            </td>
         </tr><tr class='slate-sep-row' data-slate='SNF'>
                 <td colspan='12' class='slate-sep-cell'>
                     <span class='sep-dash'>────</span>
                     <span class='sep-label'>SUNDAY NIGHT FOOTBALL</span>
                     <span class='sep-dash'>────</span>
                 </td>
-            </tr><tr class='' data-slate='SNF'>
-            <td class='mu'>DET @ <b>CAR</b></td>
+            </tr><tr class='game-row ' data-slate='SNF' data-game='DET_CAR' data-toggle-game='DET_CAR' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-DET_CAR'>
+            <td class='mu'>DET @ <b>CAR</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>DET -3.5</td>
             <td><b>DET -3.5</b></td>
             <td class='flat'>--</td>
             <td>50.5</td>
             <td><b>51.5</b></td>
-            <td class='delta'>1.0</td>
+            <td class='delta'><span class='movement-badge'>1.0</span></td>
             <td class='it-away'>DET 27.5</td>
             <td class='it-home'>CAR 24.0</td>
             <td class='reason' title='Total 50.5 → 51.5'>Total 50.5 → 51.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>22</td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>11</td>
+        </tr>
+        <tr id='desktop-panel-DET_CAR' class='chart-detail-row' data-slate='SNF' data-game-panel='DET_CAR' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>SUNDAY NIGHT FOOTBALL</span><h2>DET @ CAR</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>DET -3.5</strong></div>
+                <div><span>Current spread</span><strong>DET -3.5</strong></div>
+                <div><span>Opening total</span><strong>50.5</strong></div>
+                <div><span>Current total</span><strong>51.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>DET 27.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>CAR 24.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>11</strong></div>
+            </div>
+                    <img class='expanded-chart' src='DET_CAR.png?v=1790863569' alt='DET at CAR line movement chart'>
+                    <p class='movement-note'>Total 50.5 → 51.5</p>
+                </div>
+            </td>
         </tr><tr class='slate-sep-row' data-slate='MNF'>
                 <td colspan='12' class='slate-sep-cell'>
                     <span class='sep-dash'>────</span>
                     <span class='sep-label'>MONDAY NIGHT FOOTBALL</span>
                     <span class='sep-dash'>────</span>
                 </td>
-            </tr><tr class='' data-slate='MNF'>
-            <td class='mu'>ATL @ <b>NO</b></td>
+            </tr><tr class='game-row ' data-slate='MNF' data-game='ATL_NO' data-toggle-game='ATL_NO' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-ATL_NO'>
+            <td class='mu'>ATL @ <b>NO</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>NO -2.5</td>
             <td><b>NO -2.5</b></td>
             <td class='flat'>--</td>
             <td>48.5</td>
             <td><b>47.5</b> <span class='div' title='Pinnacle divergence ≥ 1 pt'>*</span></td>
-            <td class='delta'>1.0</td>
+            <td class='delta'><span class='movement-badge'>1.0</span></td>
             <td class='it-away'>ATL 22.5</td>
             <td class='it-home'>NO 25.0</td>
             <td class='reason' title='Total 48.5 → 47.5'>Total 48.5 → 47.5</td>
-            <td style='text-align:center;'><span class='pill-fresh'>8:44 AM CT</span></td>
-            <td class='snaps'>16</td>
+            <td style='text-align:center;'><span class='pill-fresh'>9:00 AM CT</span></td>
+            <td class='snaps'>11</td>
         </tr>
-</tbody>
-</table>
+        <tr id='desktop-panel-ATL_NO' class='chart-detail-row' data-slate='MNF' data-game-panel='ATL_NO' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>MONDAY NIGHT FOOTBALL</span><h2>ATL @ NO</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>NO -2.5</strong></div>
+                <div><span>Current spread</span><strong>NO -2.5</strong></div>
+                <div><span>Opening total</span><strong>48.5</strong></div>
+                <div><span>Current total</span><strong>47.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>ATL 22.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>NO 25.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>11</strong></div>
+            </div>
+                    <img class='expanded-chart' src='ATL_NO.png?v=1790863569' alt='ATL at NO line movement chart'>
+                    <p class='movement-note'>Total 48.5 → 47.5</p>
+                </div>
+            </td>
+        </tr>
+      </tbody>
+      </table>
+    </div>
+  </section>
 
-<div class='grid'>
-<div class='card thu-card'><img src='PIT_CLE.png?v=1790862282' alt='PIT @ CLE'></div><div class='card'><img src='IND_WAS.png?v=1790862282' alt='IND @ WAS'></div><div class='card'><img src='ARI_NYG.png?v=1790862282' alt='ARI @ NYG'></div><div class='card'><img src='GB_TB.png?v=1790862282' alt='GB @ TB'></div><div class='card'><img src='LAR_PHI.png?v=1790862282' alt='LAR @ PHI'></div><div class='card'><img src='DAL_HOU.png?v=1790862282' alt='DAL @ HOU'></div><div class='card'><img src='JAX_CIN.png?v=1790862282' alt='JAX @ CIN'></div><div class='card'><img src='TEN_BAL.png?v=1790862282' alt='TEN @ BAL'></div><div class='card'><img src='NE_BUF.png?v=1790862282' alt='NE @ BUF'></div><div class='card'><img src='NYJ_CHI.png?v=1790862282' alt='NYJ @ CHI'></div><div class='card'><img src='MIA_MIN.png?v=1790862282' alt='MIA @ MIN'></div><div class='card'><img src='DEN_SF.png?v=1790862282' alt='DEN @ SF'></div><div class='card'><img src='KC_LVR.png?v=1790862282' alt='KC @ LVR'></div><div class='card'><img src='LAC_SEA.png?v=1790862282' alt='LAC @ SEA'></div><div class='card'><img src='DET_CAR.png?v=1790862282' alt='DET @ CAR'></div><div class='card'><img src='ATL_NO.png?v=1790862282' alt='ATL @ NO'></div>
-</div>
+  <section class='mobile-board' aria-label='NFL games'>
+    <article class='mobile-game-card thu' data-slate='TNF' data-game='PIT_CLE'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='PIT_CLE' aria-expanded='false' aria-controls='mobile-panel-PIT_CLE'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>THURSDAY NIGHT FOOTBALL</span>
+                    <strong>PIT @ CLE</strong>
+                    <span>Spread PIT -2.5 → -3.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>PIT -3.5</strong>
+                    <strong>O/U 38.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-PIT_CLE' class='mobile-detail' data-game-panel='PIT_CLE' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>PIT -2.5</strong></div>
+                <div><span>Current spread</span><strong>PIT -3.5</strong></div>
+                <div><span>Opening total</span><strong>38.5</strong></div>
+                <div><span>Current total</span><strong>38.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>PIT 21.0</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>CLE 17.5</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>16</strong></div>
+            </div>
+                <img class='expanded-chart' src='PIT_CLE.png?v=1790863569' alt='PIT at CLE line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 16 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='OTHER_PRIMETIME' data-game='IND_WAS'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='IND_WAS' aria-expanded='false' aria-controls='mobile-panel-IND_WAS'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>OTHER / SPECIAL PRIMETIME</span>
+                    <strong>IND @ WAS</strong>
+                    <span>Total 46.5 → 47.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>IND -3.5</strong>
+                    <strong>O/U 47.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-IND_WAS' class='mobile-detail' data-game-panel='IND_WAS' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>IND -3.5</strong></div>
+                <div><span>Current spread</span><strong>IND -3.5</strong></div>
+                <div><span>Opening total</span><strong>46.5</strong></div>
+                <div><span>Current total</span><strong>47.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>IND 25.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>WAS 22.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>19</strong></div>
+            </div>
+                <img class='expanded-chart' src='IND_WAS.png?v=1790863569' alt='IND at WAS line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 19 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SUN_EARLY' data-game='ARI_NYG'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='ARI_NYG' aria-expanded='false' aria-controls='mobile-panel-ARI_NYG'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY MAIN SLATE — EARLY</span>
+                    <strong>ARI @ NYG</strong>
+                    <span>Spread ARI +1.5 → -2.5; Total 43.5 → 44.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>ARI -2.5</strong>
+                    <strong>O/U 44.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-ARI_NYG' class='mobile-detail' data-game-panel='ARI_NYG' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>NYG -1.5</strong></div>
+                <div><span>Current spread</span><strong>ARI -2.5</strong></div>
+                <div><span>Opening total</span><strong>43.5</strong></div>
+                <div><span>Current total</span><strong>44.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>ARI 23.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>NYG 21.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>17</strong></div>
+            </div>
+                <img class='expanded-chart' src='ARI_NYG.png?v=1790863569' alt='ARI at NYG line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 17 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SUN_EARLY' data-game='GB_TB'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='GB_TB' aria-expanded='false' aria-controls='mobile-panel-GB_TB'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY MAIN SLATE — EARLY</span>
+                    <strong>GB @ TB</strong>
+                    <span>Spread GB -3.0 → -3.5; Total 42.5 → 38.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>GB -3.5</strong>
+                    <strong>O/U 38.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-GB_TB' class='mobile-detail' data-game-panel='GB_TB' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>GB -3.0</strong></div>
+                <div><span>Current spread</span><strong>GB -3.5</strong></div>
+                <div><span>Opening total</span><strong>42.5</strong></div>
+                <div><span>Current total</span><strong>38.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>GB 21.0</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>TB 17.5</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>17</strong></div>
+            </div>
+                <img class='expanded-chart' src='GB_TB.png?v=1790863569' alt='GB at TB line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 17 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SUN_EARLY' data-game='LAR_PHI'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='LAR_PHI' aria-expanded='false' aria-controls='mobile-panel-LAR_PHI'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY MAIN SLATE — EARLY</span>
+                    <strong>LAR @ PHI</strong>
+                    <span>Spread LAR -2.5 → -3.0; Total 46.5 → 43.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>LAR -3.0</strong>
+                    <strong>O/U 43.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-LAR_PHI' class='mobile-detail' data-game-panel='LAR_PHI' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>LAR -2.5</strong></div>
+                <div><span>Current spread</span><strong>LAR -3.0</strong></div>
+                <div><span>Opening total</span><strong>46.5</strong></div>
+                <div><span>Current total</span><strong>43.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>LAR 23.2</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>PHI 20.2</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>15</strong></div>
+            </div>
+                <img class='expanded-chart' src='LAR_PHI.png?v=1790863569' alt='LAR at PHI line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 15 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SUN_EARLY' data-game='DAL_HOU'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='DAL_HOU' aria-expanded='false' aria-controls='mobile-panel-DAL_HOU'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY MAIN SLATE — EARLY</span>
+                    <strong>DAL @ HOU</strong>
+                    <span>Spread HOU -2.5 → -3.0; Total 47.5 → 48.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>HOU -3.0</strong>
+                    <strong>O/U 48.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-DAL_HOU' class='mobile-detail' data-game-panel='DAL_HOU' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>HOU -2.5</strong></div>
+                <div><span>Current spread</span><strong>HOU -3.0</strong></div>
+                <div><span>Opening total</span><strong>47.5</strong></div>
+                <div><span>Current total</span><strong>48.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>DAL 22.8</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>HOU 25.8</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>17</strong></div>
+            </div>
+                <img class='expanded-chart' src='DAL_HOU.png?v=1790863569' alt='DAL at HOU line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 17 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SUN_EARLY' data-game='JAX_CIN'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='JAX_CIN' aria-expanded='false' aria-controls='mobile-panel-JAX_CIN'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY MAIN SLATE — EARLY</span>
+                    <strong>JAX @ CIN</strong>
+                    <span>Total 50.5 → 51.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>CIN -2.5</strong>
+                    <strong>O/U 51.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-JAX_CIN' class='mobile-detail' data-game-panel='JAX_CIN' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>CIN -2.5</strong></div>
+                <div><span>Current spread</span><strong>CIN -2.5</strong></div>
+                <div><span>Opening total</span><strong>50.5</strong></div>
+                <div><span>Current total</span><strong>51.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>JAX 24.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>CIN 27.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>17</strong></div>
+            </div>
+                <img class='expanded-chart' src='JAX_CIN.png?v=1790863569' alt='JAX at CIN line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 17 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SUN_EARLY' data-game='TEN_BAL'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='TEN_BAL' aria-expanded='false' aria-controls='mobile-panel-TEN_BAL'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY MAIN SLATE — EARLY</span>
+                    <strong>TEN @ BAL</strong>
+                    <span>Total 43.5 → 42.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>BAL -11.5</strong>
+                    <strong>O/U 42.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-TEN_BAL' class='mobile-detail' data-game-panel='TEN_BAL' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>BAL -11.5</strong></div>
+                <div><span>Current spread</span><strong>BAL -11.5</strong></div>
+                <div><span>Opening total</span><strong>43.5</strong></div>
+                <div><span>Current total</span><strong>42.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>TEN 15.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>BAL 27.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>15</strong></div>
+            </div>
+                <img class='expanded-chart' src='TEN_BAL.png?v=1790863569' alt='TEN at BAL line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 15 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SUN_EARLY' data-game='NE_BUF'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='NE_BUF' aria-expanded='false' aria-controls='mobile-panel-NE_BUF'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY MAIN SLATE — EARLY</span>
+                    <strong>NE @ BUF</strong>
+                    <span>Spread BUF -7.0 → -6.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>BUF -6.5</strong>
+                    <strong>O/U 48.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-NE_BUF' class='mobile-detail' data-game-panel='NE_BUF' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>BUF -7.0</strong></div>
+                <div><span>Current spread</span><strong>BUF -6.5</strong></div>
+                <div><span>Opening total</span><strong>48.5</strong></div>
+                <div><span>Current total</span><strong>48.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>NE 21.0</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>BUF 27.5</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>18</strong></div>
+            </div>
+                <img class='expanded-chart' src='NE_BUF.png?v=1790863569' alt='NE at BUF line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 18 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SUN_EARLY' data-game='NYJ_CHI'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='NYJ_CHI' aria-expanded='false' aria-controls='mobile-panel-NYJ_CHI'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY MAIN SLATE — EARLY</span>
+                    <strong>NYJ @ CHI</strong>
+                    <span>Spread CHI -3.0 → -3.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>CHI -3.5</strong>
+                    <strong>O/U 42.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-NYJ_CHI' class='mobile-detail' data-game-panel='NYJ_CHI' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>CHI -3.0</strong></div>
+                <div><span>Current spread</span><strong>CHI -3.5</strong></div>
+                <div><span>Opening total</span><strong>42.5</strong></div>
+                <div><span>Current total</span><strong>42.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>NYJ 19.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>CHI 23.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>17</strong></div>
+            </div>
+                <img class='expanded-chart' src='NYJ_CHI.png?v=1790863569' alt='NYJ at CHI line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 17 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SUN_LATE' data-game='MIA_MIN'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='MIA_MIN' aria-expanded='false' aria-controls='mobile-panel-MIA_MIN'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY MAIN SLATE — LATE</span>
+                    <strong>MIA @ MIN</strong>
+                    <span>Spread MIN -10.0 → -10.5; Total 39.5 → 38.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>MIN -10.5</strong>
+                    <strong>O/U 38.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-MIA_MIN' class='mobile-detail' data-game-panel='MIA_MIN' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>MIN -10.0</strong></div>
+                <div><span>Current spread</span><strong>MIN -10.5</strong></div>
+                <div><span>Opening total</span><strong>39.5</strong></div>
+                <div><span>Current total</span><strong>38.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>MIA 14.0</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>MIN 24.5</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>14</strong></div>
+            </div>
+                <img class='expanded-chart' src='MIA_MIN.png?v=1790863569' alt='MIA at MIN line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 14 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SUN_LATE' data-game='DEN_SF'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='DEN_SF' aria-expanded='false' aria-controls='mobile-panel-DEN_SF'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY MAIN SLATE — LATE</span>
+                    <strong>DEN @ SF</strong>
+                    <span>Total 46.5 → 47.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>SF -3.0</strong>
+                    <strong>O/U 47.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-DEN_SF' class='mobile-detail' data-game-panel='DEN_SF' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>SF -3.0</strong></div>
+                <div><span>Current spread</span><strong>SF -3.0</strong></div>
+                <div><span>Opening total</span><strong>46.5</strong></div>
+                <div><span>Current total</span><strong>47.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>DEN 22.2</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>SF 25.2</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>14</strong></div>
+            </div>
+                <img class='expanded-chart' src='DEN_SF.png?v=1790863569' alt='DEN at SF line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 14 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SUN_LATE' data-game='KC_LVR'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='KC_LVR' aria-expanded='false' aria-controls='mobile-panel-KC_LVR'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY MAIN SLATE — LATE</span>
+                    <strong>KC @ LVR</strong>
+                    <span>Spread KC -5.5 → -4.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>KC -4.5</strong>
+                    <strong>O/U 47.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-KC_LVR' class='mobile-detail' data-game-panel='KC_LVR' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>KC -5.5</strong></div>
+                <div><span>Current spread</span><strong>KC -4.5</strong></div>
+                <div><span>Opening total</span><strong>47.5</strong></div>
+                <div><span>Current total</span><strong>47.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>KC 26.0</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>LVR 21.5</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>11</strong></div>
+            </div>
+                <img class='expanded-chart' src='KC_LVR.png?v=1790863569' alt='KC at LVR line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 11 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SUN_LATE' data-game='LAC_SEA'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='LAC_SEA' aria-expanded='false' aria-controls='mobile-panel-LAC_SEA'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY MAIN SLATE — LATE</span>
+                    <strong>LAC @ SEA</strong>
+                    <span>Spread SEA -6.5 → -7.0; Total 43.5 → 42.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>SEA -7.0</strong>
+                    <strong>O/U 42.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-LAC_SEA' class='mobile-detail' data-game-panel='LAC_SEA' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>SEA -6.5</strong></div>
+                <div><span>Current spread</span><strong>SEA -7.0</strong></div>
+                <div><span>Opening total</span><strong>43.5</strong></div>
+                <div><span>Current total</span><strong>42.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>LAC 17.8</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>SEA 24.8</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>11</strong></div>
+            </div>
+                <img class='expanded-chart' src='LAC_SEA.png?v=1790863569' alt='LAC at SEA line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 11 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='SNF' data-game='DET_CAR'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='DET_CAR' aria-expanded='false' aria-controls='mobile-panel-DET_CAR'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>SUNDAY NIGHT FOOTBALL</span>
+                    <strong>DET @ CAR</strong>
+                    <span>Total 50.5 → 51.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>DET -3.5</strong>
+                    <strong>O/U 51.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-DET_CAR' class='mobile-detail' data-game-panel='DET_CAR' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>DET -3.5</strong></div>
+                <div><span>Current spread</span><strong>DET -3.5</strong></div>
+                <div><span>Opening total</span><strong>50.5</strong></div>
+                <div><span>Current total</span><strong>51.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>DET 27.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>CAR 24.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>11</strong></div>
+            </div>
+                <img class='expanded-chart' src='DET_CAR.png?v=1790863569' alt='DET at CAR line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 11 chart dots</p>
+            </div>
+        </article><article class='mobile-game-card ' data-slate='MNF' data-game='ATL_NO'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='ATL_NO' aria-expanded='false' aria-controls='mobile-panel-ATL_NO'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>MONDAY NIGHT FOOTBALL</span>
+                    <strong>ATL @ NO</strong>
+                    <span>Total 48.5 → 47.5</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>NO -2.5</strong>
+                    <strong>O/U 47.5</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-ATL_NO' class='mobile-detail' data-game-panel='ATL_NO' hidden>
+                <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>NO -2.5</strong></div>
+                <div><span>Current spread</span><strong>NO -2.5</strong></div>
+                <div><span>Opening total</span><strong>48.5</strong></div>
+                <div><span>Current total</span><strong>47.5</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>ATL 22.5</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>NO 25.0</strong></div>
+                <div><span>Last valid pull</span><strong>9:00 AM CT</strong></div>
+                <div><span>Chart dots</span><strong>11</strong></div>
+            </div>
+                <img class='expanded-chart' src='ATL_NO.png?v=1790863569' alt='ATL at NO line movement chart'>
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · 11 chart dots</p>
+            </div>
+        </article>
+  </section>
+</main>
 
 <script>
+function closeAllGamePanels() {
+  document.querySelectorAll('[data-game-panel]').forEach(panel => panel.hidden = true);
+  document.querySelectorAll('[data-toggle-game]').forEach(toggle => toggle.setAttribute('aria-expanded', 'false'));
+}
+
+function toggleGame(gameKey) {
+  const toggles = Array.from(document.querySelectorAll('[data-toggle-game="' + gameKey + '"]'));
+  const panels = Array.from(document.querySelectorAll('[data-game-panel="' + gameKey + '"]'));
+  const shouldOpen = !toggles.some(toggle => toggle.getAttribute('aria-expanded') === 'true');
+  closeAllGamePanels();
+  if (shouldOpen) {
+    toggles.forEach(toggle => toggle.setAttribute('aria-expanded', 'true'));
+    panels.forEach(panel => panel.hidden = false);
+  }
+}
+
+document.querySelectorAll('[data-toggle-game]').forEach(toggle => {
+  toggle.addEventListener('click', () => toggleGame(toggle.dataset.toggleGame));
+  if (toggle.tagName !== 'BUTTON') {
+    toggle.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleGame(toggle.dataset.toggleGame);
+      }
+    });
+  }
+});
+
+function applySlateFilter(slate) {
+  closeAllGamePanels();
+  document.querySelectorAll('.game-row').forEach(row => {
+    row.hidden = slate !== 'ALL' && row.dataset.slate !== slate;
+  });
+  document.querySelectorAll('.mobile-game-card').forEach(card => {
+    card.hidden = slate !== 'ALL' && card.dataset.slate !== slate;
+  });
+  document.querySelectorAll('.slate-sep-row').forEach(separator => {
+    const hasVisibleGame = Array.from(document.querySelectorAll('.game-row[data-slate="' + separator.dataset.slate + '"]')).some(row => !row.hidden);
+    separator.hidden = !hasVisibleGame;
+  });
+  document.querySelectorAll('.filter-button').forEach(button => {
+    button.classList.toggle('active', button.dataset.filter === slate);
+  });
+}
+
+document.querySelectorAll('.filter-button').forEach(button => {
+  button.addEventListener('click', () => applySlateFilter(button.dataset.filter));
+});
+
 function updateDynamicFeedAge() {
   const banner = document.getElementById('feed-banner');
   if (!banner) return;
@@ -494,7 +1467,7 @@ function updateDynamicFeedAge() {
       banner.className = 'alert-banner stale';
     }
     const hrsDisplay = (Math.floor(diffHours * 10) / 10).toFixed(1);
-    banner.innerHTML = "<span class='alert-icon'>⚠️</span> <b>Feed Stale — No Update in " + hrsDisplay + " hrs.</b> Last snapshot: <span id='feed-time'>" + (banner.getAttribute('data-feed-ts-label') || '') + "</span>. Check GitHub Actions run log for details.";
+    banner.innerHTML = "<span class='alert-icon'>⚠️</span> <b>Feed Stale — No Update in " + hrsDisplay + " hrs.</b> Last pull: <span id='feed-time'>" + (banner.getAttribute('data-feed-ts-label') || '') + "</span>. Check the local runner log for details.";
   }
 }
 updateDynamicFeedAge();

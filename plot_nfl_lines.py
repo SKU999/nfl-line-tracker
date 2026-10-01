@@ -15,6 +15,7 @@ Addresses all user feedback:
 import json
 import os
 import sys
+from html import escape
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
@@ -96,29 +97,9 @@ def load_data(active_only=True):
             games[mu_key].append(s)
 
     for mu in list(games.keys()):
+        # Every stored pull is intentionally retained and rendered as a dot,
+        # even when the market values are unchanged.
         games[mu].sort(key=lambda s: s.get("ts", ""))
-        deduped = []
-        for s in games[mu]:
-            if not deduped:
-                deduped.append(s)
-                continue
-            prev = deduped[-1]
-            try:
-                t1 = datetime.fromisoformat(prev["ts"].replace("Z", "+00:00"))
-                t2 = datetime.fromisoformat(s["ts"].replace("Z", "+00:00"))
-                diff_min = abs((t2 - t1).total_seconds()) / 60.0
-            except:
-                diff_min = 999.0
-            lines_same = (
-                s.get("dk_spread") == prev.get("dk_spread") and
-                s.get("dk_total") == prev.get("dk_total") and
-                s.get("pin_spread") == prev.get("pin_spread") and
-                s.get("pin_total") == prev.get("pin_total")
-            )
-            if lines_same and diff_min < 75.0:
-                continue
-            deduped.append(s)
-        games[mu] = deduped
 
     if active_only:
         filtered = {}
@@ -244,14 +225,19 @@ def plot_game(gid, snapshots, output_dir):
     ax.set_facecolor(BG_CHART)
 
     # Home implied total (AMBER) - Always bright, thick line
-    ax.plot(timestamps, home_impls, "o-", color=AMBER_BRIGHT, linewidth=2.8,
-            markersize=7, markerfacecolor=AMBER_BRIGHT, markeredgecolor=BG_CHART, markeredgewidth=1.5,
+    ax.plot(timestamps, home_impls, "o-", color=AMBER_BRIGHT, linewidth=2.4,
+            markersize=5.5, markerfacecolor=AMBER_BRIGHT, markeredgecolor=BG_CHART, markeredgewidth=1.0,
             label=f"{home} (Home)", zorder=5)
 
     # Away implied total (TEAL) - Always bright, thick line
-    ax.plot(timestamps, away_impls, "s-", color=TEAL_BRIGHT, linewidth=2.8,
-            markersize=7, markerfacecolor=TEAL_BRIGHT, markeredgecolor=BG_CHART, markeredgewidth=1.5,
+    ax.plot(timestamps, away_impls, "o-", color=TEAL_BRIGHT, linewidth=2.4,
+            markersize=5.5, markerfacecolor=TEAL_BRIGHT, markeredgecolor=BG_CHART, markeredgewidth=1.0,
             label=f"{away} (Away)", zorder=5)
+
+    # Faint opening references make the baseline easy to compare without
+    # competing with the timestamp dots.
+    ax.axhline(home_impls[0], color=AMBER_BRIGHT, linestyle=":", linewidth=1.0, alpha=0.24, zorder=1)
+    ax.axhline(away_impls[0], color=TEAL_BRIGHT, linestyle=":", linewidth=1.0, alpha=0.24, zorder=1)
 
     # Value annotations on the latest points
     ax.annotate(f"{home} {home_impls[-1]:.1f}",
@@ -285,7 +271,7 @@ def plot_game(gid, snapshots, output_dir):
         fav_sp = format_spread_fav(away, home, dk_spreads[-1] if dk_spreads else None)
         tot = dk_totals[-1] if dk_totals else None
     tot_str = f"O/U {tot:.1f}" if tot is not None else ""
-    ax.set_title(f"{away} @ {home}   |   {fav_sp}   |   {tot_str}",
+    ax.set_title(f"{away} @ {home}   |   {fav_sp}   |   {tot_str}   |   {len(timestamps)} pulls",
                  fontsize=13, fontweight="bold", pad=12, loc="left", color=TEXT_TITLE)
 
     ax.set_ylabel("Implied Total", fontsize=10, color=TEXT_LABEL)
@@ -409,6 +395,8 @@ def build_board_rows(games_data, latest_ts=None):
         rows.append({
             "away": away, "home": home, "day": day, "gid": gid,
             "n_snaps": len(snaps),
+            "n_chart_points": len(valid_snaps),
+            "n_failed_attempts": len(snaps) - len(valid_snaps),
             "start": start_time,
             "slate_window": slate_code,
             "slate_label": slate_label,
@@ -443,17 +431,19 @@ def build_board_rows(games_data, latest_ts=None):
     return rows
 
 
-def delta_cell(d):
-    """Spread delta: magnitude only, no directional arrow (arrow is ambiguous for home vs away favorites)."""
+def delta_cell(d, significant_at=1.0):
+    """Movement magnitude with a neutral emphasis badge for meaningful changes."""
     if abs(d) < 0.1:
         return "<td class='flat'>--</td>"
-    return f"<td class='delta'>{abs(d):.1f}</td>"
+    cls = "movement-badge significant" if abs(d) >= significant_at else "movement-badge"
+    return f"<td class='delta'><span class='{cls}'>{abs(d):.1f}</span></td>"
 
 
 def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
     now_ct = datetime.now(CT_TZ)
     now_ct_str = now_ct.strftime("%a %b %d, %Y %-I:%M %p %Z")
     total_snaps = sum(r["n_snaps"] for r in board_rows)
+    total_chart_points = sum(r.get("n_chart_points", r["n_snaps"]) for r in board_rows)
     all_reasons = load_reasons()
     status_info = load_scraper_status()
 
@@ -535,7 +525,10 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
             <b>Feed Healthy:</b> All {len(board_rows)} games active & updated. Board age based on oldest line: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
         </div>"""
 
+    chart_lookup = {f.replace(".png", ""): f for f in chart_files}
+    cache_token = int(now_ct.timestamp())
     table_rows = []
+    mobile_cards = []
     current_slate = None
 
     for r in board_rows:
@@ -586,7 +579,8 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
             if abs(r["t_d"]) >= 0.5:
                 move_parts.append(f"Total {r['t0']:.1f} → {r['t1']:.1f}")
             reason_text = "; ".join(move_parts)
-        reason_cell = f"<td class='reason' title='{reason_text}'>{reason_text}</td>" if reason_text else "<td class='reason-empty'>--</td>"
+        safe_reason = escape(reason_text, quote=True)
+        reason_cell = f"<td class='reason' title='{safe_reason}'>{safe_reason}</td>" if reason_text else "<td class='reason-empty'>--</td>"
 
         lv_str = r["last_valid_str"]
         if r["latest_market_missing"] or r["is_stale_game"]:
@@ -594,29 +588,74 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         else:
             updated_cell = f"<td style='text-align:center;'><span class='pill-fresh'>{lv_str}</span></td>"
 
-        table_rows.append(f"""<tr class='{row_cls}' data-slate='{r["slate_window"]}'>
-            <td class='mu'>{tag}{r['away']} @ <b>{r['home']}</b></td>
+        game_key = f"{r['away']}_{r['home']}"
+        chart_file = chart_lookup.get(game_key)
+        chart_src = f"{chart_file}?v={cache_token}" if chart_file else ""
+        chart_html = (
+            f"<img class='expanded-chart' src='{chart_src}' alt='{r['away']} at {r['home']} line movement chart'>"
+            if chart_file else "<p class='chart-unavailable'>Chart unavailable for this matchup.</p>"
+        )
+        detail_stats = f"""
+            <div class='detail-stats'>
+                <div><span>Opening spread</span><strong>{r['sp_fav_open']}</strong></div>
+                <div><span>Current spread</span><strong>{r['sp_fav_now']}</strong></div>
+                <div><span>Opening total</span><strong>{tot_open_str}</strong></div>
+                <div><span>Current total</span><strong>{tot_now_str}</strong></div>
+                <div><span>Away implied</span><strong class='it-away'>{away_it_str}</strong></div>
+                <div><span>Home implied</span><strong class='it-home'>{home_it_str}</strong></div>
+                <div><span>Last valid pull</span><strong>{lv_str}</strong></div>
+                <div><span>Chart dots</span><strong>{r.get('n_chart_points', r['n_snaps'])}</strong></div>
+            </div>""".strip()
+
+        table_rows.append(f"""<tr class='game-row {row_cls}' data-slate='{r["slate_window"]}' data-game='{game_key}' data-toggle-game='{game_key}' tabindex='0' role='button' aria-expanded='false' aria-controls='desktop-panel-{game_key}'>
+            <td class='mu'>{tag}{r['away']} @ <b>{r['home']}</b><span class='view-chart'>View chart <span class='chevron'>⌄</span></span></td>
             <td>{r['sp_fav_open']}</td>
             <td><b>{r['sp_fav_now']}</b>{sp_flag}</td>
-            {delta_cell(r['sp_d'])}
+            {delta_cell(r['sp_d'], 1.0)}
             <td>{tot_open_str}</td>
             <td><b>{tot_now_str}</b>{t_flag}</td>
-            {delta_cell(r['t_d'])}
+            {delta_cell(r['t_d'], 2.0)}
             <td class='it-away'>{away_it_str}</td>
             <td class='it-home'>{home_it_str}</td>
             {reason_cell}
             {updated_cell}
-            <td class='snaps'>{r['n_snaps']}</td>
+            <td class='snaps'>{r.get('n_chart_points', r['n_snaps'])}</td>
+        </tr>
+        <tr id='desktop-panel-{game_key}' class='chart-detail-row' data-slate='{r["slate_window"]}' data-game-panel='{game_key}' hidden>
+            <td colspan='12'>
+                <div class='chart-detail-shell'>
+                    <div class='chart-detail-heading'>
+                        <div><span class='eyebrow'>{r['slate_label']}</span><h2>{r['away']} @ {r['home']}</h2></div>
+                        <span class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull</span>
+                    </div>
+                    {detail_stats}
+                    {chart_html}
+                    <p class='movement-note'>{safe_reason or 'No movement from the tracker baseline.'}</p>
+                </div>
+            </td>
         </tr>""")
 
-    chart_lookup = {f.replace(".png", ""): f for f in chart_files}
-    cache_token = int(now_ct.timestamp())
-    cards = []
-    for r in board_rows:
-        key = f"{r['away']}_{r['home']}"
-        if key in chart_lookup:
-            cls = "card thu-card" if r["is_thu"] else "card"
-            cards.append(f"<div class='{cls}'><img src='{chart_lookup[key]}?v={cache_token}' alt='{r['away']} @ {r['home']}'></div>")
+        movement_summary = safe_reason or "No movement from baseline"
+        mobile_cards.append(f"""
+        <article class='mobile-game-card {row_cls}' data-slate='{r["slate_window"]}' data-game='{game_key}'>
+            <button class='mobile-game-summary' type='button' data-toggle-game='{game_key}' aria-expanded='false' aria-controls='mobile-panel-{game_key}'>
+                <span class='mobile-game-main'>
+                    <span class='mobile-slate'>{r['slate_label']}</span>
+                    <strong>{r['away']} @ {r['home']}</strong>
+                    <span>{movement_summary}</span>
+                </span>
+                <span class='mobile-current'>
+                    <strong>{r['sp_fav_now']}</strong>
+                    <strong>O/U {tot_now_str}</strong>
+                    <span class='chevron'>⌄</span>
+                </span>
+            </button>
+            <div id='mobile-panel-{game_key}' class='mobile-detail' data-game-panel='{game_key}' hidden>
+                {detail_stats}
+                {chart_html}
+                <p class='pull-note'><span class='pull-dot'></span> Every dot is a valid completed pull · {r.get('n_chart_points', r['n_snaps'])} chart dots</p>
+            </div>
+        </article>""".strip())
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -791,49 +830,238 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
     display: block;
   }}
   .thu-card {{ opacity: 0.45; }}
+
+  /* Dashboard shell and clearer hierarchy */
+  body {{
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(0, 229, 255, 0.07), transparent 34%),
+      radial-gradient(circle at 90% 8%, rgba(255, 179, 0, 0.06), transparent 30%),
+      {BG_PAGE};
+  }}
+  .app-shell {{ max-width: 1880px; margin: 0 auto; }}
+  .page-header {{ margin-bottom: 18px; }}
+  .title-row {{ display: flex; align-items: center; justify-content: space-between; gap: 16px; }}
+  .title-kicker {{ color: {TEAL_BRIGHT}; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }}
+  h1 {{ font-size: clamp(24px, 2.4vw, 36px); letter-spacing: -0.7px; }}
+  .sub {{ color: #A3A9BE; font-size: 13px; margin: 8px 0 10px; }}
+  .legend-box {{ margin-left: 0; margin-top: 8px; }}
+  details.about {{ color: #979DB2; font-size: 12px; max-width: 880px; }}
+  details.about summary {{ cursor: pointer; color: #C9CDDA; font-weight: 650; width: fit-content; }}
+  details.about p {{ padding-top: 8px; line-height: 1.65; }}
+
+  .filter-bar {{
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    overflow-x: auto;
+    padding: 2px 0 14px;
+    scrollbar-width: thin;
+  }}
+  .filter-bar::-webkit-scrollbar {{ display: none; }}
+  .filter-button {{
+    appearance: none;
+    border: 1px solid #2A2E41;
+    background: #151722;
+    color: #AEB4C8;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: 140ms ease;
+  }}
+  .filter-button:hover {{ border-color: #4B526D; color: #FFFFFF; }}
+  .filter-button.active {{ background: rgba(0, 229, 255, 0.13); border-color: rgba(0, 229, 255, 0.55); color: #84F2FF; }}
+
+  .desktop-board {{ display: block; }}
+  .mobile-board {{ display: none; }}
+  .table-wrap {{ overflow-x: auto; border: 1px solid #1F2332; border-radius: 12px; box-shadow: 0 16px 38px rgba(0,0,0,.22); }}
+  .table-wrap table {{ min-width: 1220px; margin-bottom: 0; border-radius: 0; }}
+  thead th {{ position: sticky; top: 0; z-index: 6; background: #151722; color: #959CB3; }}
+  td {{ color: #A8AEC2; }}
+  .game-row {{ cursor: pointer; transition: background 140ms ease, box-shadow 140ms ease; }}
+  .game-row:hover td {{ background: #191C29; }}
+  .game-row:focus-visible {{ outline: 2px solid {TEAL_BRIGHT}; outline-offset: -2px; }}
+  .game-row[aria-expanded='true'] td {{ background: #1B1E2C; border-bottom-color: transparent; }}
+  .game-row[aria-expanded='true'] .chevron,
+  .mobile-game-summary[aria-expanded='true'] .chevron {{ transform: rotate(180deg); }}
+  .view-chart {{ display: block; margin-top: 3px; color: #7FEFFF; font-size: 9px; font-weight: 750; letter-spacing: .3px; }}
+  .chevron {{ display: inline-block; transition: transform 160ms ease; }}
+  tr.thu td {{ opacity: 1; }}
+  tr.thu .mu {{ border-left: 3px solid #7A8099; }}
+  .movement-badge {{ display: inline-flex; min-width: 30px; justify-content: center; padding: 2px 6px; border-radius: 999px; background: #24283A; color: #BFC5D8; }}
+  .movement-badge.significant {{ background: rgba(135, 111, 255, .18); color: #C8BBFF; border: 1px solid rgba(135, 111, 255, .4); }}
+
+  .chart-detail-row td {{ padding: 0; background: #10121B; }}
+  .chart-detail-shell {{ padding: 22px; border-top: 1px solid rgba(0,229,255,.28); border-bottom: 1px solid #252A3C; }}
+  .chart-detail-heading {{ display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 14px; }}
+  .chart-detail-heading h2 {{ color: #F6F7FB; font-size: 20px; }}
+  .eyebrow {{ color: #7E859D; font-size: 9px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }}
+  .pull-note {{ color: #AAB0C3; font-size: 11px; }}
+  .pull-dot {{ display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: {TEAL_BRIGHT}; box-shadow: 0 0 8px rgba(0,229,255,.75); margin-right: 5px; }}
+  .detail-stats {{ display: grid; grid-template-columns: repeat(8, minmax(105px, 1fr)); gap: 8px; margin-bottom: 14px; }}
+  .detail-stats > div {{ background: #181B28; border: 1px solid #24283A; border-radius: 8px; padding: 9px 10px; }}
+  .detail-stats span {{ display: block; color: #7F869E; font-size: 9px; text-transform: uppercase; letter-spacing: .5px; }}
+  .detail-stats strong {{ display: block; color: #F0F2F8; font-size: 12px; margin-top: 3px; }}
+  .expanded-chart {{ display: block; width: min(1180px, 100%); height: auto; margin: 0 auto; border-radius: 10px; border: 1px solid #24283A; background: {BG_CHART}; }}
+  .movement-note {{ color: #B4BACD; font-size: 12px; text-align: center; padding-top: 10px; }}
+  .chart-unavailable {{ color: #8A90A6; padding: 30px; text-align: center; }}
+
+  @media (max-width: 900px) {{
+    body {{ padding: 14px; }}
+    .filter-bar {{ scrollbar-width: none; }}
+    .desktop-board {{ display: none; }}
+    .mobile-board {{ display: grid; gap: 10px; }}
+    .title-row {{ align-items: flex-start; }}
+    .alert-banner {{ display: block; line-height: 1.55; }}
+    .alert-banner .status-dot, .alert-banner .alert-icon {{ margin-right: 6px; }}
+    .mobile-game-card {{ background: #141620; border: 1px solid #24283A; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.18); }}
+    .mobile-game-card.thu {{ border-left: 3px solid #7A8099; }}
+    .mobile-game-summary {{ width: 100%; display: flex; justify-content: space-between; gap: 14px; align-items: center; padding: 14px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }}
+    .mobile-game-main {{ display: grid; gap: 3px; min-width: 0; }}
+    .mobile-game-main strong {{ color: #F3F5FA; font-size: 16px; }}
+    .mobile-game-main > span:last-child {{ color: #9DA4B9; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }}
+    .mobile-slate {{ color: #737B95; font-size: 8px; font-weight: 800; letter-spacing: .9px; text-transform: uppercase; }}
+    .mobile-current {{ display: grid; gap: 3px; justify-items: end; flex: 0 0 auto; }}
+    .mobile-current strong {{ color: #E8EBF4; font-size: 12px; }}
+    .mobile-current .chevron {{ color: {TEAL_BRIGHT}; font-size: 16px; }}
+    .mobile-detail {{ border-top: 1px solid #262B3E; padding: 12px; background: #10121B; }}
+    .detail-stats {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+    .expanded-chart {{ width: 100%; }}
+    .mobile-detail .pull-note {{ display: block; padding: 10px 2px 2px; text-align: center; }}
+    .legend-box {{ display: flex; flex-wrap: wrap; gap: 10px; }}
+  }}
+
+  @media (max-width: 480px) {{
+    body {{ padding: 11px; }}
+    h1 {{ font-size: 25px; line-height: 1.08; }}
+    .sub {{ font-size: 12px; }}
+    .alert-banner {{ font-size: 11.5px; padding: 10px 12px; }}
+    .filter-bar {{ margin-right: -11px; padding-right: 11px; }}
+    .mobile-game-main > span:last-child {{ max-width: 190px; }}
+  }}
 </style>
 </head>
 <body>
-<h1>NFL Line Movement — DraftKings</h1>
-<p class='sub'>
-  DraftKings pinned &middot; Cross-checked with Pinnacle (* = 1+ pt divergence).<br>
-  Cadence: Local Mac every 3 hours, 24/7 &middot; Sunday &amp; MNF rapid kickoff steam &middot; Baseline = tracker's earliest capture this week.<br>
-  Page rendered {now_ct_str} &middot; {total_snaps} snapshots recorded
-  <span class='legend-box'>
-    <span class='dot-teal'>■ Away Implied Total</span>
-    <span class='dot-amber'>● Home Implied Total</span>
-  </span>
-</p>
+<main class='app-shell'>
+  <header class='page-header'>
+    <div class='title-row'>
+      <div>
+        <span class='title-kicker'>Live market board</span>
+        <h1>NFL Line Movement</h1>
+      </div>
+    </div>
+    <p class='sub'>
+      DraftKings main lines &middot; Pinnacle cross-check &middot; Updated by the local Mac tracker<br>
+      Page rendered {now_ct_str} &middot; {total_chart_points} valid chart dots &middot; {total_snaps} total pull attempts
+      <span class='legend-box'>
+        <span class='dot-teal'>● Away implied total</span>
+        <span class='dot-amber'>● Home implied total</span>
+        <span><span class='pull-dot'></span>Every dot = one valid completed pull</span>
+      </span>
+    </p>
+    <details class='about'>
+      <summary>About this tracker</summary>
+      <p>Lines are pinned to DraftKings and checked against Pinnacle. An asterisk marks a 1+ point divergence. The baseline is the earliest capture retained for the active week. Normal cadence is every three hours, with faster Sunday and Monday-night kickoff coverage.</p>
+    </details>
+  </header>
 
-{status_banner}
+  {status_banner}
 
-<table>
-<thead>
-<tr>
-  <th>Matchup</th>
-  <th title="Earliest capture recorded by tracker this week">Tracker Baseline Spread</th>
-  <th>Current Spread</th>
-  <th>Δ SP</th>
-  <th title="Earliest total recorded by tracker this week">Tracker Baseline Total</th>
-  <th>Current Total</th>
-  <th>Δ Tot</th>
-  <th>Away IT (Teal)</th>
-  <th>Home IT (Amber)</th>
-  <th>Movement Context / Reason</th>
-  <th style="text-align: center;" title="Timestamp of latest recorded line snapshot (unchanged lines within 75m are deduplicated)">Last Recorded</th>
-  <th style="text-align: center;">Snaps</th>
-</tr>
-</thead>
-<tbody>
-{''.join(table_rows)}
-</tbody>
-</table>
+  <nav class='filter-bar' aria-label='Filter games by slate'>
+    <button class='filter-button active' type='button' data-filter='ALL'>All games</button>
+    <button class='filter-button' type='button' data-filter='TNF'>TNF</button>
+    <button class='filter-button' type='button' data-filter='OTHER_PRIMETIME'>Special</button>
+    <button class='filter-button' type='button' data-filter='SUN_EARLY'>Sunday early</button>
+    <button class='filter-button' type='button' data-filter='SUN_LATE'>Sunday late</button>
+    <button class='filter-button' type='button' data-filter='SNF'>SNF</button>
+    <button class='filter-button' type='button' data-filter='MNF'>MNF</button>
+  </nav>
 
-<div class='grid'>
-{''.join(cards)}
-</div>
+  <section class='desktop-board' aria-label='NFL line movement table'>
+    <div class='table-wrap'>
+      <table>
+      <thead>
+      <tr>
+        <th>Matchup</th>
+        <th title="Earliest spread captured this week">Opening</th>
+        <th>Current</th>
+        <th>Move</th>
+        <th title="Earliest total captured this week">Opening O/U</th>
+        <th>Current O/U</th>
+        <th>Move</th>
+        <th>Away IT</th>
+        <th>Home IT</th>
+        <th>Movement</th>
+        <th style="text-align: center;" title="Timestamp of the latest completed pull">Last pull</th>
+        <th style="text-align: center;">Chart dots</th>
+      </tr>
+      </thead>
+      <tbody>
+      {''.join(table_rows)}
+      </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class='mobile-board' aria-label='NFL games'>
+    {''.join(mobile_cards)}
+  </section>
+</main>
 
 <script>
+function closeAllGamePanels() {{
+  document.querySelectorAll('[data-game-panel]').forEach(panel => panel.hidden = true);
+  document.querySelectorAll('[data-toggle-game]').forEach(toggle => toggle.setAttribute('aria-expanded', 'false'));
+}}
+
+function toggleGame(gameKey) {{
+  const toggles = Array.from(document.querySelectorAll('[data-toggle-game="' + gameKey + '"]'));
+  const panels = Array.from(document.querySelectorAll('[data-game-panel="' + gameKey + '"]'));
+  const shouldOpen = !toggles.some(toggle => toggle.getAttribute('aria-expanded') === 'true');
+  closeAllGamePanels();
+  if (shouldOpen) {{
+    toggles.forEach(toggle => toggle.setAttribute('aria-expanded', 'true'));
+    panels.forEach(panel => panel.hidden = false);
+  }}
+}}
+
+document.querySelectorAll('[data-toggle-game]').forEach(toggle => {{
+  toggle.addEventListener('click', () => toggleGame(toggle.dataset.toggleGame));
+  if (toggle.tagName !== 'BUTTON') {{
+    toggle.addEventListener('keydown', event => {{
+      if (event.key === 'Enter' || event.key === ' ') {{
+        event.preventDefault();
+        toggleGame(toggle.dataset.toggleGame);
+      }}
+    }});
+  }}
+}});
+
+function applySlateFilter(slate) {{
+  closeAllGamePanels();
+  document.querySelectorAll('.game-row').forEach(row => {{
+    row.hidden = slate !== 'ALL' && row.dataset.slate !== slate;
+  }});
+  document.querySelectorAll('.mobile-game-card').forEach(card => {{
+    card.hidden = slate !== 'ALL' && card.dataset.slate !== slate;
+  }});
+  document.querySelectorAll('.slate-sep-row').forEach(separator => {{
+    const hasVisibleGame = Array.from(document.querySelectorAll('.game-row[data-slate="' + separator.dataset.slate + '"]')).some(row => !row.hidden);
+    separator.hidden = !hasVisibleGame;
+  }});
+  document.querySelectorAll('.filter-button').forEach(button => {{
+    button.classList.toggle('active', button.dataset.filter === slate);
+  }});
+}}
+
+document.querySelectorAll('.filter-button').forEach(button => {{
+  button.addEventListener('click', () => applySlateFilter(button.dataset.filter));
+}});
+
 function updateDynamicFeedAge() {{
   const banner = document.getElementById('feed-banner');
   if (!banner) return;
@@ -867,7 +1095,7 @@ function updateDynamicFeedAge() {{
       banner.className = 'alert-banner stale';
     }}
     const hrsDisplay = (Math.floor(diffHours * 10) / 10).toFixed(1);
-    banner.innerHTML = "<span class='alert-icon'>\u26a0\ufe0f</span> <b>Feed Stale \u2014 No Update in " + hrsDisplay + " hrs.</b> Last snapshot: <span id='feed-time'>" + (banner.getAttribute('data-feed-ts-label') || '') + "</span>. Check GitHub Actions run log for details.";
+    banner.innerHTML = "<span class='alert-icon'>\u26a0\ufe0f</span> <b>Feed Stale \u2014 No Update in " + hrsDisplay + " hrs.</b> Last pull: <span id='feed-time'>" + (banner.getAttribute('data-feed-ts-label') || '') + "</span>. Check the local runner log for details.";
   }}
 }}
 updateDynamicFeedAge();

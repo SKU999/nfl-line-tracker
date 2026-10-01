@@ -250,55 +250,24 @@ def load_latest_snapshots():
     return latest
 
 
-def is_duplicate_snapshot(curr, prev):
-    if not prev:
-        return False
-    try:
-        t1 = datetime.fromisoformat(prev["ts"].replace("Z", "+00:00"))
-        t2 = datetime.fromisoformat(curr["ts"].replace("Z", "+00:00"))
-        diff_min = abs((t2 - t1).total_seconds()) / 60.0
-    except Exception:
-        diff_min = 999.0
-
-    lines_identical = (
-        curr.get("dk_spread") == prev.get("dk_spread") and
-        curr.get("dk_total") == prev.get("dk_total") and
-        curr.get("pin_spread") == prev.get("pin_spread") and
-        curr.get("pin_total") == prev.get("pin_total")
-    )
-    # If lines haven't moved and less than 75 minutes have elapsed, it's a redundant duplicate run
-    return lines_identical and (diff_min < 75.0)
-
-
 def save_snapshots(snapshots):
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
 
-    latest_by_game = load_latest_snapshots()
-    to_save = []
-    skipped = 0
-
-    for snap in snapshots:
-        mu = f"{snap.get('away')}@{snap.get('home')}"
-        prev = latest_by_game.get(mu)
-        if is_duplicate_snapshot(snap, prev):
-            skipped += 1
-            continue
-        to_save.append(snap)
-        latest_by_game[mu] = snap
-
-    if to_save:
+    # Retain every pull, including unchanged markets. Each timestamp becomes a
+    # visible chart dot so collection cadence is auditable at a glance.
+    if snapshots:
         # 1. Active working file
         with open(DATA_FILE, "a") as f:
-            for snap in to_save:
+            for snap in snapshots:
                 f.write(json.dumps(snap) + "\n")
 
         # 2. Immutable Perpetual Raw Archive
         with open(PERPETUAL_FILE, "a") as f:
-            for snap in to_save:
+            for snap in snapshots:
                 f.write(json.dumps(snap) + "\n")
 
-    print(f"[STORAGE] Saved {len(to_save)} new/changed snapshots ({skipped} duplicate/unchanged within 75m suppressed).")
+    print(f"[STORAGE] Saved all {len(snapshots)} pull snapshots (unchanged markets retained as chart dots).")
 
 
 def write_status(success, error=None, games_count=0, valid_games_count=0, invalid_games=None):

@@ -32,7 +32,7 @@ It captures:
 | `.github/workflows/nfl_tracker.yml` | GitHub Pages workflow | Deploys the checked-in `charts/` directory after a local runner push. It does not scrape from GitHub-hosted runners. |
 | `data/nfl_lines.jsonl` | Database | Rolling JSONL log of market snapshots per game. |
 | `data/scraper_status.json` | Health status file | Contains the run timestamp, success flag, total and valid game counts, error details, and invalid matchup names. Written purely by code. |
-| `charts/index.html` | Front-end dashboard | Single-page HTML containing summary table, modal charts, and dynamic JS staleness banner. |
+| `charts/index.html` | Front-end dashboard | Responsive single-page board with slate filters, expandable per-game charts, mobile game cards, and a dynamic JS staleness banner. Every valid completed pull is shown as a chart dot. |
 
 ---
 

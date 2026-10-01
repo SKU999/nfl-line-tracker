@@ -34,16 +34,17 @@ Lines are pulled from a free, publicly accessible odds screen. This is an unoffi
    - Rolling view of the current NFL week, filtered by Tuesday-to-Tuesday windows.
 2. **Immutable Perpetual Archive (`data/archive/nfl_lines_perpetual_raw.jsonl`):**
    - Append-only ledger of every raw market snapshot; never truncated. For historical backtesting.
-3. **Proactive Snapshot Deduplication:**
-   - Before writing, the scraper checks whether the four primary market numbers (`dk_spread`, `dk_total`, `pin_spread`, `pin_total`) have changed since the last snapshot for that game.
-   - If unchanged and fewer than 75 minutes have elapsed, the duplicate is suppressed.
-   - Any movement triggers an immediate write regardless of elapsed time.
+3. **Every-Pull Continuity:**
+   - Every scheduled scrape is appended, including unchanged markets.
+   - Each valid completed pull renders as a chart dot so collection cadence and feed continuity are directly visible.
 
 ---
 
 ## ⏰ Scrape Schedule
 
 The user's Mac runs the scraper and chart generator. GitHub Actions deploys the checked-in `charts/` directory to Pages after each local update; it does not scrape the odds provider because GitHub-hosted IP ranges are blocked.
+
+The dashboard uses clickable desktop rows and responsive mobile game cards. Selecting a matchup expands its full-width movement chart directly below the game; slate filters narrow the board without leaving the page.
 
 | Window | Times (CT) |
 | :--- | :--- |
