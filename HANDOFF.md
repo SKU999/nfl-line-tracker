@@ -29,9 +29,9 @@ It captures:
 | `plot_nfl_lines.py` | Dashboard & chart builder | Processes `data/nfl_lines.jsonl` and `data/scraper_status.json`. Generates PNG charts in `charts/` and `charts/index.html`. Employs oldest-game timestamping for staleness. |
 | `run_tracker.sh` | Local execution script | Runs scraper, plotter, and git commit/push under macOS `caffeinate -u -t 240`. |
 | `setup_cron.py` | Local cron configurer | Generates and installs crontab invoking `run_tracker.sh`. |
-| `.github/workflows/nfl_tracker.yml` | GitHub Actions workflow | Runs every 3 hours 24/7. **Note:** Safely discards local changes if 403-blocked by 4codds to protect good local data. |
+| `.github/workflows/nfl_tracker.yml` | GitHub Pages workflow | Deploys the checked-in `charts/` directory after a local runner push. It does not scrape from GitHub-hosted runners. |
 | `data/nfl_lines.jsonl` | Database | Rolling JSONL log of market snapshots per game. |
-| `data/scraper_status.json` | Health status file | Contains `{ success, timestamp, message, error_type, games_scraped }`. Written purely by code. |
+| `data/scraper_status.json` | Health status file | Contains the run timestamp, success flag, total and valid game counts, error details, and invalid matchup names. Written purely by code. |
 | `charts/index.html` | Front-end dashboard | Single-page HTML containing summary table, modal charts, and dynamic JS staleness banner. |
 
 ---
@@ -46,7 +46,7 @@ It captures:
 ### B. Remote Blocking of GitHub Actions (HTTP 403)
 - **Symptom:** GitHub Actions runs fail with `HTTP 403 Forbidden` on `4codds.com`.
 - **Finding:** The data provider blocks major cloud datacenter IP ranges (Azure/AWS GitHub runners) via Cloudflare/WAF. Residential IP (the user's Mac) succeeds 100% of the time.
-- **Protection in Place:** The GitHub Actions workflow is guarded so that if the scraper fails, it runs `git checkout data/` and exits gracefully without overwriting valid local data or pushing a false failure state.
+- **Protection in Place:** GitHub Actions no longer scrapes or regenerates charts. The Mac runner owns data collection and pushes the generated dashboard; Actions only deploys the checked-in `charts/` directory. This prevents cloud failures from publishing an old board with a new render timestamp.
 
 ### C. DraftKings Alternate Line Picking vs Main Lines
 - **Problem:** Books often offer alternate lines (e.g., 48.5 at -104 / -128) alongside standard main lines (47.5 at -110 / -110). Scrapers picking strictly the lowest-juice side or consensus match sometimes picked lopsided alternate lines.

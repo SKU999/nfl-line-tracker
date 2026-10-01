@@ -38,8 +38,8 @@ CMD = RUN_SCRIPT
 CRON_LINES = [
     # 1. Base Cadence: Every 3 hours 24/7 (0, 3, 6, 9, 12, 15, 18, 21 CT)
     f"0 0,3,6,9,12,15,18,21 * * * {CMD} {MARKER}",
-    # 2. Sunday Early Window: 6,7,8,9,10 AM hourly
-    f"0 6,7,8,9,10 * * 0 {CMD} {MARKER}",
+    # 2. Sunday extras: base cadence already covers 6 and 9 AM
+    f"0 7,8,10 * * 0 {CMD} {MARKER}",
     # 3. Sunday Early Kickoff Steam: 11:00, 11:30, 11:55 AM
     f"0,30,55 11 * * 0 {CMD} {MARKER}",
     # 4. Sunday Late Window & SNF Steam: 3:00 PM, 3:20 PM, 6:00 PM, 7:10 PM, 10:00 PM
@@ -47,8 +47,7 @@ CRON_LINES = [
     f"0 18 * * 0 {CMD} {MARKER}",
     f"10 19 * * 0 {CMD} {MARKER}",
     f"0 22 * * 0 {CMD} {MARKER}",
-    # 5. Monday Window: 9am, 12pm, 3pm, 6pm, 7:10pm (MNF steam), 10:30pm
-    f"0 9,12,15,18 * * 1 {CMD} {MARKER}",
+    # 5. Monday extras: base cadence covers 9am, noon, 3pm, and 6pm
     f"10 19 * * 1 {CMD} {MARKER}",
     f"30 22 * * 1 {CMD} {MARKER}",
 ]

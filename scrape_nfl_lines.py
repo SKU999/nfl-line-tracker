@@ -301,7 +301,7 @@ def save_snapshots(snapshots):
     print(f"[STORAGE] Saved {len(to_save)} new/changed snapshots ({skipped} duplicate/unchanged within 75m suppressed).")
 
 
-def write_status(success, error=None, games_count=0):
+def write_status(success, error=None, games_count=0, valid_games_count=0, invalid_games=None):
     """Write run status to data/scraper_status.json for dashboard visibility."""
     try:
         os.makedirs(DATA_DIR, exist_ok=True)
@@ -310,6 +310,8 @@ def write_status(success, error=None, games_count=0):
             "success": success,
             "error": error,
             "games_count": games_count,
+            "valid_games_count": valid_games_count,
+            "invalid_games": invalid_games or [],
         }
         with open(STATUS_FILE, "w") as f:
             json.dump(data, f, indent=2)
@@ -341,7 +343,33 @@ def main():
         if snaps:
             save_snapshots(snaps)
             print(f"[{ts}] Saved {len(snaps)} snapshots to active database and perpetual archive.")
-            write_status(True, error=None, games_count=len(snaps))
+            invalid_games = [
+                f"{s.get('away')}@{s.get('home')}"
+                for s in snaps
+                if s.get("dk_spread") is None or s.get("dk_total") is None
+            ]
+            valid_games_count = len(snaps) - len(invalid_games)
+            if invalid_games:
+                msg = (
+                    f"Missing complete DraftKings market for {len(invalid_games)} of "
+                    f"{len(snaps)} games: {', '.join(invalid_games)}"
+                )
+                print(f"[{ts}] [DEGRADED] {msg}")
+                write_status(
+                    False,
+                    error=msg,
+                    games_count=len(snaps),
+                    valid_games_count=valid_games_count,
+                    invalid_games=invalid_games,
+                )
+                sys.exit(1)
+            write_status(
+                True,
+                error=None,
+                games_count=len(snaps),
+                valid_games_count=valid_games_count,
+                invalid_games=[],
+            )
         else:
             msg = "No games collected from board"
             print(f"[{ts}] {msg}")

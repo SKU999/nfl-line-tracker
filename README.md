@@ -43,7 +43,7 @@ Lines are pulled from a free, publicly accessible odds screen. This is an unoffi
 
 ## ⏰ Scrape Schedule
 
-Runs via **GitHub Actions**, every 3 hours, 24/7:
+The user's Mac runs the scraper and chart generator. GitHub Actions deploys the checked-in `charts/` directory to Pages after each local update; it does not scrape the odds provider because GitHub-hosted IP ranges are blocked.
 
 | Window | Times (CT) |
 | :--- | :--- |
@@ -54,7 +54,7 @@ Runs via **GitHub Actions**, every 3 hours, 24/7:
 | SNF steam | 6:00 PM, 7:10 PM |
 | MNF steam | 7:10 PM (Monday) |
 
-GitHub Actions runs at minute 12 of each base hour to avoid top-of-hour runner queuing. On-demand scraping is also available via `workflow_dispatch` in the GitHub UI.
+The base cadence covers duplicate Sunday and Monday hours, so the supplemental cron entries contain only the additional kickoff-steam times. `workflow_dispatch` redeploys the current checked-in charts but does not perform an odds scrape.
 
 ---
 
@@ -77,7 +77,7 @@ python3 log_reason.py "ARI @ NYG" "Giants ruled out LT Andrew Thomas — source:
 python3 log_reason.py --list
 ```
 
-### 4. Manage Local Crontab (optional backup runner)
+### 4. Manage Local Crontab
 ```bash
 python3 setup_cron.py install   # Add local cron entries
 python3 setup_cron.py status    # View active entries
