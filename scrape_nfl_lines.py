@@ -270,7 +270,24 @@ def save_snapshots(snapshots):
     print(f"[STORAGE] Saved all {len(snapshots)} pull snapshots (unchanged markets retained as chart dots).")
 
 
-def write_status(success, error=None, games_count=0, valid_games_count=0, invalid_games=None):
+def game_has_started(snapshot, ref_time=None):
+    """Return True when a game's scheduled kickoff is at or before ref_time."""
+    start = snapshot.get("start")
+    if not start:
+        return False
+    try:
+        start_dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
+        if start_dt.tzinfo is None:
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        now = ref_time or datetime.now(timezone.utc)
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=timezone.utc)
+        return start_dt <= now
+    except Exception:
+        return False
+
+
+def write_status(success, error=None, games_count=0, valid_games_count=0, invalid_games=None, closed_games_count=0):
     """Write run status to data/scraper_status.json for dashboard visibility."""
     try:
         os.makedirs(DATA_DIR, exist_ok=True)
@@ -281,6 +298,7 @@ def write_status(success, error=None, games_count=0, valid_games_count=0, invali
             "games_count": games_count,
             "valid_games_count": valid_games_count,
             "invalid_games": invalid_games or [],
+            "closed_games_count": closed_games_count,
         }
         with open(STATUS_FILE, "w") as f:
             json.dump(data, f, indent=2)
@@ -312,12 +330,18 @@ def main():
         if snaps:
             save_snapshots(snaps)
             print(f"[{ts}] Saved {len(snaps)} snapshots to active database and perpetual archive.")
-            invalid_games = [
-                f"{s.get('away')}@{s.get('home')}"
-                for s in snaps
+            missing_market_games = [
+                s for s in snaps
                 if s.get("dk_spread") is None or s.get("dk_total") is None
             ]
-            valid_games_count = len(snaps) - len(invalid_games)
+            closed_market_games = [s for s in missing_market_games if game_has_started(s)]
+            invalid_games = [
+                f"{s.get('away')}@{s.get('home')}"
+                for s in missing_market_games
+                if not game_has_started(s)
+            ]
+            valid_games_count = len(snaps) - len(missing_market_games)
+            closed_games_count = len(closed_market_games)
             if invalid_games:
                 msg = (
                     f"Missing complete DraftKings market for {len(invalid_games)} of "
@@ -330,6 +354,7 @@ def main():
                     games_count=len(snaps),
                     valid_games_count=valid_games_count,
                     invalid_games=invalid_games,
+                    closed_games_count=closed_games_count,
                 )
                 sys.exit(1)
             write_status(
@@ -338,6 +363,7 @@ def main():
                 games_count=len(snaps),
                 valid_games_count=valid_games_count,
                 invalid_games=[],
+                closed_games_count=closed_games_count,
             )
         else:
             msg = "No games collected from board"

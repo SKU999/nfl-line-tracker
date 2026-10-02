@@ -31,7 +31,7 @@ It captures:
 | `setup_cron.py` | Local cron configurer | Generates and installs crontab invoking `run_tracker.sh`. |
 | `.github/workflows/nfl_tracker.yml` | GitHub Pages workflow | Deploys the checked-in `charts/` directory after a local runner push. It does not scrape from GitHub-hosted runners. |
 | `data/nfl_lines.jsonl` | Database | Rolling JSONL log of market snapshots per game. |
-| `data/scraper_status.json` | Health status file | Contains the run timestamp, success flag, total and valid game counts, error details, and invalid matchup names. Written purely by code. |
+| `data/scraper_status.json` | Health status file | Contains the run timestamp, success flag, total/valid/closed game counts, error details, and invalid pregame matchup names. Written purely by code. |
 | `charts/index.html` | Front-end dashboard | Responsive single-page board with slate filters, expandable per-game charts, mobile game cards, and a dynamic JS staleness banner. Every valid completed pull is shown as a chart dot. |
 
 ---
@@ -59,7 +59,7 @@ It captures:
 - `data/scraper_status.json` is generated directly by `scrape_nfl_lines.py`. Hand-editing this file should never be permitted.
 
 ### E. Staleness Calculation
-- The dashboard banner timestamp uses the **oldest game** across the 16 matchups ($\min(ts_i)$). A single fresh line cannot mask 15 stale lines.
+- The dashboard banner timestamp uses the **oldest open pregame market** across the active matchups ($\min(ts_i)$). A single fresh line cannot mask stale open games, while games whose kickoff has passed retain their final verified line without making the board appear degraded.
 - The browser counts elapsed time locally and shifts to a red banner when elapsed time exceeds 4.0 hours (Mon–Sat) or 1.5 hours (Sunday).
 
 ---

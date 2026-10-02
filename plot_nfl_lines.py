@@ -346,6 +346,16 @@ def build_board_rows(games_data, latest_ts=None):
         home = latest_meta.get("home") or snaps[0].get("home", "?")
         start_time = latest_meta.get("start") or snaps[0].get("start", "")
         day = game_day(start_time)
+        market_closed = False
+        game_status_str = ""
+        if start_time:
+            try:
+                start_dt = parse_ts_ct(start_time)
+                market_closed = start_dt <= latest_dt
+                if market_closed:
+                    game_status_str = f"Started {start_dt.strftime('%a %-I:%M %p CT')}"
+            except Exception:
+                pass
 
         dk_sp0 = first.get("dk_spread")
         dk_sp1 = last.get("dk_spread")
@@ -357,7 +367,7 @@ def build_board_rows(games_data, latest_ts=None):
 
         # A missing DraftKings market in the latest scrape is a degradation
         # immediately, even while the last valid line is recent.
-        latest_market_missing = (
+        latest_market_missing = not market_closed and (
             latest_meta.get("dk_spread") is None or
             latest_meta.get("dk_total") is None
         )
@@ -368,7 +378,7 @@ def build_board_rows(games_data, latest_ts=None):
             try:
                 last_valid_dt = parse_ts_ct(last_valid_ts)
                 age_hrs = (latest_dt - last_valid_dt).total_seconds() / 3600.0
-                if age_hrs >= stale_limit:
+                if not market_closed and age_hrs >= stale_limit:
                     is_stale_game = True
                 if last_valid_dt.date() == latest_dt.date():
                     last_valid_str = last_valid_dt.strftime("%-I:%M %p CT")
@@ -414,6 +424,8 @@ def build_board_rows(games_data, latest_ts=None):
             "is_thu": slate_code == "TNF",
             "is_stale_game": is_stale_game,
             "latest_market_missing": latest_market_missing,
+            "market_closed": market_closed,
+            "game_status_str": game_status_str,
             "last_valid_str": last_valid_str,
             "last_valid_ts": last_valid_ts,
         })
@@ -450,7 +462,9 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
     # Determine board ages:
     # Base banner freshness on the OLDEST game's latest recorded line
     # so a single updated game does not mask that 15 games are stale.
-    game_timestamps = [r["last_valid_ts"] for r in board_rows if r.get("last_valid_ts")]
+    open_rows = [r for r in board_rows if not r.get("market_closed", False)]
+    closed_count = len(board_rows) - len(open_rows)
+    game_timestamps = [r["last_valid_ts"] for r in open_rows if r.get("last_valid_ts")]
     oldest_ts = min(game_timestamps) if game_timestamps else latest_ts
     newest_ts = max(game_timestamps) if game_timestamps else latest_ts
 
@@ -520,9 +534,10 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
             <b>SCRAPER STALE WARNING:</b> Oldest game line was captured <span id='feed-age-dynamic'>{initial_age_str}</span> (<span id='feed-time'>{last_success_str}</span>). Check the local runner log for details.
         </div>"""
     else:
+        closed_note = f" {closed_count} game{'s have' if closed_count != 1 else ' has'} started and is showing its final verified pregame line." if closed_count else ""
         status_banner = f"""<div id='feed-banner' class='alert-banner healthy' data-banner-kind='healthy' data-feed-ts='{banner_ts}' data-feed-ts-label='{last_success_str}'>
             <span class='status-dot'></span>
-            <b>Feed Healthy:</b> All {len(board_rows)} games active & updated. Board age based on oldest line: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
+            <b>Feed Healthy:</b> All {len(open_rows)} open markets updated.{closed_note} Board age based on oldest open market: <span id='feed-time'>{last_success_str}</span> (<span id='feed-age-dynamic'>{initial_age_str}</span>).
         </div>"""
 
     chart_lookup = {f.replace(".png", ""): f for f in chart_files}
@@ -543,7 +558,12 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
                 </td>
             </tr>""")
 
-        row_cls = "thu" if r["is_thu"] else ""
+        row_classes = []
+        if r["is_thu"]:
+            row_classes.append("thu")
+        if r.get("market_closed"):
+            row_classes.append("closed-game")
+        row_cls = " ".join(row_classes)
         tag = "<span class='tag'>THU</span> " if r["is_thu"] else ""
         
         # Pinnacle divergence flag: orange asterisk if 1+ pt divergence
@@ -583,7 +603,10 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
         reason_cell = f"<td class='reason' title='{safe_reason}'>{safe_reason}</td>" if reason_text else "<td class='reason-empty'>--</td>"
 
         lv_str = r["last_valid_str"]
-        if r["latest_market_missing"] or r["is_stale_game"]:
+        if r.get("market_closed"):
+            status_text = r.get("game_status_str") or "Game started"
+            updated_cell = f"<td style='text-align:center;'><span class='pill-closed' title='Pregame market closed at kickoff. Showing the final verified pregame line from {lv_str}.'>{status_text}</span></td>"
+        elif r["latest_market_missing"] or r["is_stale_game"]:
             updated_cell = f"<td style='text-align:center;'><span class='pill-stale' title='Market was missing or stale on the latest scraper run. Showing last verified line from {lv_str}.'>⚠️ {lv_str}</span></td>"
         else:
             updated_cell = f"<td style='text-align:center;'><span class='pill-fresh'>{lv_str}</span></td>"
@@ -803,6 +826,17 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
     font-weight: 600;
     display: inline-block;
   }}
+  .pill-closed {{
+    background: rgba(139, 146, 169, 0.14);
+    color: #B6BCCF;
+    border: 1px solid rgba(139, 146, 169, 0.3);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 650;
+    display: inline-block;
+    white-space: nowrap;
+  }}
   .status-dot {{
     width: 8px;
     height: 8px;
@@ -886,6 +920,8 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
   .game-row:hover td {{ background: #191C29; }}
   .game-row:focus-visible {{ outline: 2px solid {TEAL_BRIGHT}; outline-offset: -2px; }}
   .game-row[aria-expanded='true'] td {{ background: #1B1E2C; border-bottom-color: transparent; }}
+  .game-row.closed-game td {{ background: rgba(125, 132, 154, 0.035); }}
+  .game-row.closed-game .view-chart {{ color: #ADB4C8; }}
   .game-row[aria-expanded='true'] .chevron,
   .mobile-game-summary[aria-expanded='true'] .chevron {{ transform: rotate(180deg); }}
   .view-chart {{ display: block; margin-top: 3px; color: #7FEFFF; font-size: 9px; font-weight: 750; letter-spacing: .3px; }}
@@ -920,6 +956,7 @@ def generate_html(chart_files, board_rows, output_dir, latest_ts=None):
     .alert-banner .status-dot, .alert-banner .alert-icon {{ margin-right: 6px; }}
     .mobile-game-card {{ background: #141620; border: 1px solid #24283A; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.18); }}
     .mobile-game-card.thu {{ border-left: 3px solid #7A8099; }}
+    .mobile-game-card.closed-game {{ border-color: #3A3F52; }}
     .mobile-game-summary {{ width: 100%; display: flex; justify-content: space-between; gap: 14px; align-items: center; padding: 14px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }}
     .mobile-game-main {{ display: grid; gap: 3px; min-width: 0; }}
     .mobile-game-main strong {{ color: #F3F5FA; font-size: 16px; }}

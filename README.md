@@ -17,6 +17,7 @@ An automated, continuous NFL betting market tracker and visualization dashboard.
   - Monday Night Football (MNF)
 - **Sharp Divergence Flags (`*`):** Any game where DraftKings diverges from Pinnacle by 1.0 or more points is automatically tagged with an orange indicator (`*`).
 - **Dynamic Browser Feed Age:** Client-side JavaScript ticks every 5 seconds to compute the exact feed age in the browser. It displays minute-level precision (`Xm ago`) and automatically flags the feed status if snapshots stall.
+- **Kickoff-aware health:** Once a game starts, its pregame market is expected to close. The dashboard preserves the final verified line and excludes that matchup from open-market degradation and staleness checks.
 - **Per-Game Freshness Pills:** A dedicated `Last Recorded` column flags the exact time each game's odds were captured, distinguishing fresh lines from markets showing previous values.
 - **Movement Summary:** When a spread or total moves ≥ 0.5 pt from the tracker baseline, the board automatically shows what moved and by how much. Annotate a specific reason with `log_reason.py` — the note then appears in the Movement Context column alongside the auto-summary.
 

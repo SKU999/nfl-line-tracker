@@ -55,6 +55,43 @@ class FeedHealthTests(unittest.TestCase):
         self.assertEqual(rows[0]["dk_sp1"], 2.5)
         self.assertEqual(rows[0]["t1"], 38.5)
 
+    def test_missing_market_after_kickoff_is_closed_not_degraded(self):
+        snaps = [
+            {
+                "ts": "2026-10-01T23:00:00+00:00",
+                "away": "PIT",
+                "home": "CLE",
+                "start": "2026-10-02T00:15:00+00:00",
+                "dk_spread": 3.5,
+                "dk_total": 38.5,
+                "away_impl": 21.0,
+                "home_impl": 17.5,
+            },
+            {
+                "ts": "2026-10-02T02:00:00+00:00",
+                "away": "PIT",
+                "home": "CLE",
+                "start": "2026-10-02T00:15:00+00:00",
+                "dk_spread": None,
+                "dk_total": None,
+            },
+        ]
+
+        rows = plotter.build_board_rows(
+            {"PIT@CLE": snaps},
+            latest_ts="2026-10-02T02:00:00+00:00",
+        )
+
+        self.assertTrue(rows[0]["market_closed"])
+        self.assertFalse(rows[0]["latest_market_missing"])
+        self.assertFalse(rows[0]["is_stale_game"])
+        self.assertIn("Started", rows[0]["game_status_str"])
+
+    def test_scraper_recognizes_started_game(self):
+        ref_time = scraper.datetime.fromisoformat("2026-10-02T02:00:00+00:00")
+        snapshot = {"start": "2026-10-02T00:15:00+00:00"}
+        self.assertTrue(scraper.game_has_started(snapshot, ref_time=ref_time))
+
     def test_status_records_invalid_matchups(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             old_status_file = scraper.STATUS_FILE
