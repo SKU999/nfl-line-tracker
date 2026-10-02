@@ -1,9 +1,9 @@
 {
-  "ts": "2026-10-02T03:54:09.460162+00:00",
+  "ts": "2026-10-02T05:00:17.933770+00:00",
   "success": true,
   "error": null,
-  "games_count": 17,
+  "games_count": 16,
   "valid_games_count": 16,
   "invalid_games": [],
-  "closed_games_count": 1
+  "closed_games_count": 0
 }
