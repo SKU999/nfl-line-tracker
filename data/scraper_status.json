@@ -1,10 +1,9 @@
 {
-  "ts": "2026-10-02T02:00:19.174392+00:00",
-  "success": false,
-  "error": "Missing complete DraftKings market for 1 of 17 games: PIT@CLE",
+  "ts": "2026-10-02T03:54:09.460162+00:00",
+  "success": true,
+  "error": null,
   "games_count": 17,
   "valid_games_count": 16,
-  "invalid_games": [
-    "PIT@CLE"
-  ]
+  "invalid_games": [],
+  "closed_games_count": 1
 }
