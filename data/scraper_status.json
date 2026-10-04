@@ -1,19 +1,13 @@
 {
-  "ts": "2026-10-04T20:10:26.033773+00:00",
+  "ts": "2026-10-04T20:20:21.772560+00:00",
   "success": false,
-  "error": "Missing complete DraftKings market for 9 of 26 games: IND@PIT, MIN@NO, CLE@NYJ, CIN@MIA, LVR@NE, NYG@WAS, HOU@TEN, CHI@GB, DEN@LAC",
-  "games_count": 26,
-  "valid_games_count": 11,
+  "error": "Missing complete DraftKings market for 3 of 20 games: IND@PIT, CLE@NYJ, NYG@WAS",
+  "games_count": 20,
+  "valid_games_count": 16,
   "invalid_games": [
     "IND@PIT",
-    "MIN@NO",
     "CLE@NYJ",
-    "CIN@MIA",
-    "LVR@NE",
-    "NYG@WAS",
-    "HOU@TEN",
-    "CHI@GB",
-    "DEN@LAC"
+    "NYG@WAS"
   ],
-  "closed_games_count": 6
+  "closed_games_count": 1
 }
