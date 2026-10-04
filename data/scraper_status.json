@@ -1,12 +1,13 @@
 {
-  "ts": "2026-10-04T13:00:31.310266+00:00",
+  "ts": "2026-10-04T14:00:31.789312+00:00",
   "success": false,
-  "error": "Missing complete DraftKings market for 2 of 29 games: IND@PIT, CLE@NYJ",
+  "error": "Missing complete DraftKings market for 3 of 29 games: IND@PIT, CLE@NYJ, NYG@WAS",
   "games_count": 29,
-  "valid_games_count": 27,
+  "valid_games_count": 25,
   "invalid_games": [
     "IND@PIT",
-    "CLE@NYJ"
+    "CLE@NYJ",
+    "NYG@WAS"
   ],
-  "closed_games_count": 0
+  "closed_games_count": 1
 }
