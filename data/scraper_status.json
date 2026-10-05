@@ -1,11 +1,9 @@
 {
-  "ts": "2026-10-05T03:00:18.073352+00:00",
-  "success": false,
-  "error": "Missing complete DraftKings market for 1 of 16 games: DET@ARI",
-  "games_count": 16,
-  "valid_games_count": 14,
-  "invalid_games": [
-    "DET@ARI"
-  ],
-  "closed_games_count": 1
+  "ts": "2026-10-05T05:00:17.115698+00:00",
+  "success": true,
+  "error": null,
+  "games_count": 15,
+  "valid_games_count": 15,
+  "invalid_games": [],
+  "closed_games_count": 0
 }
