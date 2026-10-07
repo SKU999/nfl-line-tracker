@@ -1,9 +1,11 @@
 {
-  "ts": "2026-10-07T14:00:17.796041+00:00",
-  "success": true,
-  "error": null,
+  "ts": "2026-10-07T17:00:17.379246+00:00",
+  "success": false,
+  "error": "Missing complete DraftKings market for 1 of 15 games: TB@DAL",
   "games_count": 15,
-  "valid_games_count": 15,
-  "invalid_games": [],
+  "valid_games_count": 14,
+  "invalid_games": [
+    "TB@DAL"
+  ],
   "closed_games_count": 0
 }
