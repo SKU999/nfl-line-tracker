@@ -1,9 +1,24 @@
 {
-  "ts": "2026-10-10T05:00:16.002568+00:00",
-  "success": true,
-  "error": null,
+  "ts": "2026-10-10T08:00:16.299465+00:00",
+  "success": false,
+  "error": "Missing complete DraftKings market for 14 of 14 games: PHI@JAX, IND@PIT, MIN@NO, CLE@NYJ, CIN@MIA, LVR@NE, NYG@WAS, HOU@TEN, CHI@GB, DEN@LAC, SF@SEA, DET@ARI, BAL@ATL, BUF@LAR",
   "games_count": 14,
-  "valid_games_count": 14,
-  "invalid_games": [],
+  "valid_games_count": 0,
+  "invalid_games": [
+    "PHI@JAX",
+    "IND@PIT",
+    "MIN@NO",
+    "CLE@NYJ",
+    "CIN@MIA",
+    "LVR@NE",
+    "NYG@WAS",
+    "HOU@TEN",
+    "CHI@GB",
+    "DEN@LAC",
+    "SF@SEA",
+    "DET@ARI",
+    "BAL@ATL",
+    "BUF@LAR"
+  ],
   "closed_games_count": 0
 }
