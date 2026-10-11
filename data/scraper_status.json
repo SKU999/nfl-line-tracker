@@ -1,9 +1,12 @@
 {
-  "ts": "2026-10-11T02:00:16.586902+00:00",
-  "success": true,
-  "error": null,
+  "ts": "2026-10-11T05:00:15.804009+00:00",
+  "success": false,
+  "error": "Missing complete DraftKings market for 2 of 14 games: DEN@LAC, BAL@ATL",
   "games_count": 14,
-  "valid_games_count": 14,
-  "invalid_games": [],
+  "valid_games_count": 12,
+  "invalid_games": [
+    "DEN@LAC",
+    "BAL@ATL"
+  ],
   "closed_games_count": 0
 }
