@@ -1,24 +1,9 @@
 {
-  "ts": "2026-10-13T05:00:16.369709+00:00",
-  "success": false,
-  "error": "Missing complete DraftKings market for 14 of 14 games: SEA@DEN, HOU@JAX, NYJ@NE, PIT@TB, TEN@IND, CAR@PHI, NO@NYG, BAL@CLE, CHI@ATL, ARI@LAR, BUF@LVR, LAC@KC, DAL@GB, WAS@SF",
+  "ts": "2026-10-13T08:00:15.858604+00:00",
+  "success": true,
+  "error": null,
   "games_count": 14,
-  "valid_games_count": 0,
-  "invalid_games": [
-    "SEA@DEN",
-    "HOU@JAX",
-    "NYJ@NE",
-    "PIT@TB",
-    "TEN@IND",
-    "CAR@PHI",
-    "NO@NYG",
-    "BAL@CLE",
-    "CHI@ATL",
-    "ARI@LAR",
-    "BUF@LVR",
-    "LAC@KC",
-    "DAL@GB",
-    "WAS@SF"
-  ],
+  "valid_games_count": 14,
+  "invalid_games": [],
   "closed_games_count": 0
 }
