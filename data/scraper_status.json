@@ -1,9 +1,9 @@
 {
-  "ts": "2026-10-14T02:02:02.124932+00:00",
-  "success": false,
-  "error": "Failed to fetch https://4codds.com/api/v2/board/football (Failed to perform, curl: (28) Connection timed out after 25003 milliseconds. See https://curl.se/libcurl/c/libcurl-errors.html first for more details.) after 4 retries.",
-  "games_count": 0,
-  "valid_games_count": 0,
+  "ts": "2026-10-14T05:00:15.528326+00:00",
+  "success": true,
+  "error": null,
+  "games_count": 14,
+  "valid_games_count": 14,
   "invalid_games": [],
   "closed_games_count": 0
 }
