@@ -1,11 +1,9 @@
 {
-  "ts": "2026-10-20T03:30:16.039354+00:00",
-  "success": false,
-  "error": "Missing complete DraftKings market for 1 of 14 games: SF@ATL",
+  "ts": "2026-10-20T05:00:16.233347+00:00",
+  "success": true,
+  "error": null,
   "games_count": 14,
-  "valid_games_count": 13,
-  "invalid_games": [
-    "SF@ATL"
-  ],
+  "valid_games_count": 14,
+  "invalid_games": [],
   "closed_games_count": 0
 }
