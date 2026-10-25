@@ -1,14 +1,12 @@
 {
-  "ts": "2026-10-25T20:22:31.016700+00:00",
+  "ts": "2026-10-25T23:02:05.566145+00:00",
   "success": false,
-  "error": "Missing complete DraftKings market for 4 of 6 games: LAR@LVR, GB@DET, KC@SEA, DAL@PHI",
-  "games_count": 6,
+  "error": "Missing complete DraftKings market for 2 of 5 games: KC@SEA, DAL@PHI",
+  "games_count": 5,
   "valid_games_count": 0,
   "invalid_games": [
-    "LAR@LVR",
-    "GB@DET",
     "KC@SEA",
     "DAL@PHI"
   ],
-  "closed_games_count": 2
+  "closed_games_count": 3
 }
