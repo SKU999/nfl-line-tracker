@@ -1,12 +1,23 @@
 {
-  "ts": "2026-10-25T23:02:05.566145+00:00",
+  "ts": "2026-10-26T00:15:17.986095+00:00",
   "success": false,
-  "error": "Missing complete DraftKings market for 2 of 5 games: KC@SEA, DAL@PHI",
-  "games_count": 5,
+  "error": "Missing complete DraftKings market for 13 of 13 games: KC@SEA, DAL@PHI, CAR@GB, MIN@DET, LVR@NYJ, ARI@DAL, ATL@TB, IND@JAX, TEN@CIN, CLE@PIT, LAC@LAR, NE@MIA, PHI@WAS",
+  "games_count": 13,
   "valid_games_count": 0,
   "invalid_games": [
     "KC@SEA",
-    "DAL@PHI"
+    "DAL@PHI",
+    "CAR@GB",
+    "MIN@DET",
+    "LVR@NYJ",
+    "ARI@DAL",
+    "ATL@TB",
+    "IND@JAX",
+    "TEN@CIN",
+    "CLE@PIT",
+    "LAC@LAR",
+    "NE@MIA",
+    "PHI@WAS"
   ],
-  "closed_games_count": 3
+  "closed_games_count": 0
 }
