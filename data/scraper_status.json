@@ -1,15 +1,12 @@
 {
-  "ts": "2026-11-08T21:24:37.437911+00:00",
+  "ts": "2026-11-09T00:02:29.421940+00:00",
   "success": false,
-  "error": "Missing complete DraftKings market for 5 of 11 games: LVR@SF, GB@NE, ARI@SEA, TB@CHI, BUF@MIN",
-  "games_count": 11,
+  "error": "Missing complete DraftKings market for 2 of 6 games: TB@CHI, BUF@MIN",
+  "games_count": 6,
   "valid_games_count": 0,
   "invalid_games": [
-    "LVR@SF",
-    "GB@NE",
-    "ARI@SEA",
     "TB@CHI",
     "BUF@MIN"
   ],
-  "closed_games_count": 6
+  "closed_games_count": 4
 }
