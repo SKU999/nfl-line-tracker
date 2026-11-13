@@ -1,8 +1,8 @@
 {
-  "ts": "2026-11-13T03:05:45.217261+00:00",
+  "ts": "2026-11-13T06:05:21.166313+00:00",
   "success": false,
-  "error": "Missing complete DraftKings market for 13 of 14 games: NE@DET, BUF@NYJ, JAX@TEN, MIA@IND, CAR@NO, MIN@GB, KC@ATL, HOU@CLE, SEA@LVR, LAR@ARI, SF@DAL, PIT@CIN, LAC@BAL",
-  "games_count": 14,
+  "error": "Missing complete DraftKings market for 13 of 13 games: NE@DET, BUF@NYJ, JAX@TEN, MIA@IND, CAR@NO, MIN@GB, KC@ATL, HOU@CLE, SEA@LVR, LAR@ARI, SF@DAL, PIT@CIN, LAC@BAL",
+  "games_count": 13,
   "valid_games_count": 0,
   "invalid_games": [
     "NE@DET",
@@ -19,5 +19,5 @@
     "PIT@CIN",
     "LAC@BAL"
   ],
-  "closed_games_count": 1
+  "closed_games_count": 0
 }
