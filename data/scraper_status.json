@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-19T12:07:07.934187+00:00",
+  "ts": "2026-11-19T15:06:58.219092+00:00",
   "success": false,
   "error": "Missing complete DraftKings market for 17 of 17 games: IND@HOU, BAL@CAR, TB@DET, NO@CHI, ARI@KC, TEN@DAL, MIA@BUF, PIT@PHI, NYJ@LAC, JAX@NYG, LVR@DEN, MIN@SF, CIN@WAS, GB@LAR, CHI@DET, PHI@DAL, KC@BUF",
   "games_count": 17,
